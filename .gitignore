@@ -1,0 +1,58 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Python Virtual Environment
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Uploaded Files & Generated PDFs
+backend/uploads/
+backend/uploads/*.pdf
+backend/uploads/*.wav
+backend/uploads/*.mp3
+backend/uploads/*.webm
+
+# Node.js Dependencies
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+
+# Build Outputs
+frontend/build/
+frontend/dist/
+*.log
+
+# IDE & System Files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing & Coverage
+*.coverage
+.pytest_cache/
+.coverage.*
+htmlcov/
+
+# Temporary Files
+*.tmp
+*.temp
+verification_result.txt
+
+# Local Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# OS Specific
+Thumbs.db
+desktop.ini

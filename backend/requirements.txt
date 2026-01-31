@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-multipart
+requests
+python-dotenv
+google-generativeai
+supabase
+pymupdf
+whisperx
+torch
+torchaudio
+torchvision
+pandas
+setuptools-rust

@@ -1,0 +1,49 @@
+# Task Checklist: Mobile-First PDF Automation Agent
+
+- [/] Project Initialization & Planning
+    - [x] Create Implementation Plan <!-- id: 0 -->
+    - [x] Verify Dependencies (WhisperX, ffmpeg) <!-- id: 1 -->
+    - [x] Scaffold Next.js Project <!-- id: 2 -->
+    - [x] Scaffold FastAPI Service <!-- id: 3 -->
+- [x] Database Setup (Supabase)
+    - [x] Create/Connect Supabase Project <!-- id: 4 -->
+    - [x] Define Schema (documents, form_fields, transcriptions) <!-- id: 5 -->
+- [x] Frontend Development (Mobile-First)
+    - [x] Implement Shell & Layout <!-- id: 6 -->
+    - [x] Create Record Button Component <!-- id: 7 -->
+    - [x] Create Document Dashboard <!-- id: 8 -->
+    - [x] Implement Bottom Tab Navigation (Record/Dashboard) <!-- id: 16 -->
+    - [x] Add Audio Visualizer & Pause/Resume Logic <!-- id: 17 -->
+    - [x] Display Formatted Transcription Results (Date/Time/Segments) <!-- id: 18 -->
+- [x] Backend Service (FastAPI)
+    - [x] PDF Field Extraction Utility <!-- id: 9 -->
+    - [x] Google Gemini Audio Service (Replaces WhisperX) <!-- id: 10 -->
+- [x] Refactor AudioService to use Google Gemini
+    - [x] Remove WhisperX and PyTorch dependencies
+    - [x] Implement transcribe using `google-generativeai`
+    - [x] Fix Gemini model name (404 error troubleshooting)
+- [x] Integration & Logic
+    - [x] Connect Frontend to API <!-- id: 11 -->
+    - [x] Implement LLM Field Mapping <!-- id: 12 -->
+    - [x] PDF Filling & Download <!-- id: 13 -->
+- [x] Phase 1: PDF Structure Analysis & Database Mapping
+    - [x] Research PyMuPDF (fitz) for field extraction <!-- id: 19 -->
+    - [x] Update Supabase schema (form_fields table) <!-- id: 20 -->
+    - [x] Integrate Supabase client in main.py & persist fields <!-- id: 21 -->
+- [x] Phase 2: AI-Driven Transcript Mapping
+    - [x] Refine Gemini prompt to map transcript text specifically to the database-stored fields <!-- id: 22 -->
+    - [x] Implement confidence scoring for field mappings <!-- id: 23 -->
+    - [x] Handle missing or ambiguous data in mapping logic <!-- id: 24 -->
+- [x] Phase 3: Automated Population & Human Review
+    - [x] Implement side-by-side review UI (Original Transcript vs. Proposed Form Values) <!-- id: 25 -->
+    - [x] Allow manual override of AI-mapped values in the UI <!-- id: 26 -->
+    - [x] Generate final populated PDF and provide download link <!-- id: 27 -->
+- [x] Phase 4: Generated PDF Display & Download
+    - [x] Mount backend static files for PDF serving <!-- id: 29 -->
+    - [x] Implement file listing/association logic <!-- id: 30 -->
+    - [x] Update frontend UI to show generated PDF cards with download links <!-- id: 31 -->
+- [x] Verification
+    - [x] Mobile UI Responsiveness Check <!-- id: 14 -->
+    - [x] Full End-to-End Walkthrough (Initial Transcription) <!-- id: 15 -->
+    - [x] Verification of complex PDF field population <!-- id: 28 -->
+    - [x] Verification of PDF download and browser viewing <!-- id: 32 -->
