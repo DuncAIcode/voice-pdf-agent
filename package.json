@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@vercel/sdk": "^1.18.9",
+    "tsx": "^4.21.0"
+  }
+}
