@@ -21,3 +21,6 @@ INSTRUCTIONS FOR AGENT:
 - Start by generating an "Implementation Plan" for the PDF scraping logic and Supabase integration.
 - Use 'Planning Mode' to verify the dependencies for WhisperX and ffmpeg before installation.
 - Provide a browser recording of the mobile UI flow once the frontend is scaffolded.
+
+AGENT BEHAVIOR RULES:
+- **Autonomous Terminal/SSH Work**: Do NOT ask the user to run terminal commands or SSH into servers manually. Always attempt to perform these actions yourself using the available tools (`run_command`, `ssh`, etc.). Only ask the user if you are strictly blocked by missing credentials.
