@@ -15,9 +15,10 @@ interface DocumentListProps {
     onSelect?: (id: string, filename: string) => void;
     activeDocumentId?: string | null;
     isActive?: boolean;
+    filter?: 'all' | 'input' | 'completed';
 }
 
-export function DocumentList({ onSelect, activeDocumentId, isActive = false }: DocumentListProps) {
+export function DocumentList({ onSelect, activeDocumentId, isActive = false, filter = 'all' }: DocumentListProps) {
     const [documents, setDocuments] = useState<Doc[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -78,6 +79,13 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false }: D
         }
     };
 
+    const filteredDocuments = documents.filter(doc => {
+        if (filter === 'all') return true;
+        if (filter === 'input') return !doc.filename.startsWith('filled_');
+        if (filter === 'completed') return doc.filename.startsWith('filled_');
+        return true;
+    });
+
     if (isLoading) {
         return (
             <div className="w-full h-48 rounded-xl border-2 border-slate-200 flex items-center justify-center text-slate-400">
@@ -86,7 +94,17 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false }: D
         );
     }
 
-    if (documents.length === 0) {
+    if (filteredDocuments.length === 0) {
+        if (filter === 'completed') {
+            return (
+                <div className="w-full h-48 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2 bg-slate-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>No completed documents yet</span>
+                    <span className="text-xs text-slate-300">Generate one from the Record tab</span>
+                </div>
+            );
+        }
+
         return (
             <div className="w-full h-48 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2 relative overflow-hidden bg-slate-50 hover:bg-slate-100 transition-colors">
                 <input
@@ -100,20 +118,7 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false }: D
                     <div className="animate-pulse">Uploading...</div>
                 ) : (
                     <>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                            <polyline points="14 2 14 8 20 8" />
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg>
                         <span>No documents yet</span>
                         <span className="text-xs text-slate-300">Tap to upload a PDF</span>
                     </>
@@ -124,12 +129,14 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false }: D
 
     return (
         <div className="w-full space-y-4">
-            <label className="block w-full text-center p-2 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-sm cursor-pointer hover:bg-slate-50">
-                {isUploading ? "Uploading..." : "Upload another PDF"}
-                <input type="file" accept=".pdf" onChange={handleUpload} disabled={isUploading} className="hidden" />
-            </label>
+            {filter === 'input' && (
+                <label className="block w-full text-center p-2 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-sm cursor-pointer hover:bg-slate-50">
+                    {isUploading ? "Uploading..." : "Upload another PDF"}
+                    <input type="file" accept=".pdf" onChange={handleUpload} disabled={isUploading} className="hidden" />
+                </label>
+            )}
             <ul className="w-full space-y-3">
-                {documents.map((doc) => (
+                {filteredDocuments.map((doc) => (
                     <li
                         key={doc.id}
                         className={`p-4 rounded-xl border transition-all ${doc.is_filled

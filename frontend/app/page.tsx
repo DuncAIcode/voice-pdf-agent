@@ -11,7 +11,7 @@ import { TranscriptionDisplay } from "../components/transcription-display";
 import { ReviewPanel } from "../components/review-panel";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"record" | "documents" | "review">("record");
+  const [activeTab, setActiveTab] = useState<"record" | "documents" | "completed" | "review">("record");
   const [transcriptionData, setTranscriptionData] = useState<any>(null);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [activeFilename, setActiveFilename] = useState<string | null>(null);
@@ -98,17 +98,20 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Documents View */}
+        {/* Documents View - Shared for Input ('documents') and Completed ('completed') */}
         <div
-          className={`absolute inset-0 flex flex-col p-6 space-y-4 transition-opacity duration-300 ${activeTab === 'documents' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+          className={`absolute inset-0 flex flex-col p-6 space-y-4 transition-opacity duration-300 ${activeTab === 'documents' || activeTab === 'completed' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
             }`}
         >
-          <h2 className="text-xl font-semibold mt-4">Your Documents</h2>
+          <h2 className="text-xl font-semibold mt-4">
+            {activeTab === 'completed' ? 'Completed Documents' : 'Select a Template'}
+          </h2>
           <div className="flex-1 overflow-y-auto w-full pb-20">
             <DocumentList
-              onSelect={handleDocumentSelect}
+              onSelect={activeTab === 'documents' ? handleDocumentSelect : undefined}
               activeDocumentId={activeDocumentId}
-              isActive={activeTab === 'documents'}
+              isActive={activeTab === 'documents' || activeTab === 'completed'}
+              filter={activeTab === 'completed' ? 'completed' : 'input'}
             />
           </div>
         </div>

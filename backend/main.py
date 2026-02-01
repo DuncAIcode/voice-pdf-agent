@@ -239,7 +239,7 @@ async def generate_form_data(request: dict, client: Client = Depends(get_authent
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/fill-pdf")
-async def fill_pdf(request: dict, token: str = Depends(get_token)):
+async def fill_pdf(request: dict, client: Client = Depends(get_authenticated_client), user_id: str = Depends(get_user_id)):
     # Expects { "filename": "...", "data": { "Field1": "Value1" } }
     try:
         filename = request.get("filename")
@@ -258,8 +258,17 @@ async def fill_pdf(request: dict, token: str = Depends(get_token)):
         success = pdf_service.fill_pdf(input_path, form_data, output_path)
         
         if success:
-            # Return the URL or path to download. For now, returning filename.
-            # In a real app, you might upload this to Supabase Storage and return a public URL.
+            # Create a document record for the filled PDF
+            try:
+                client.table("documents").insert({
+                    "original_name": output_filename,
+                    "file_path": output_path,
+                    "user_id": user_id
+                }).execute()
+            except Exception as e:
+                print(f"Warning: Failed to save filled document record to DB: {e}")
+                # We don't fail the request, but it won't show in the list
+                
             return {"message": "PDF filled successfully", "filled_filename": output_filename}
         else:
              raise HTTPException(status_code=500, detail="Failed to fill PDF")
