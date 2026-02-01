@@ -47,3 +47,4 @@
     - [x] Full End-to-End Walkthrough (Initial Transcription) <!-- id: 15 -->
     - [x] Verification of complex PDF field population <!-- id: 28 -->
     - [x] Verification of PDF download and browser viewing <!-- id: 32 -->
+    - [/] Configure Vercel Root Directory to `frontend`
