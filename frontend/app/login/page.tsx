@@ -8,10 +8,12 @@ import { useEffect, useState } from 'react'
 
 export default function LoginPage() {
     const router = useRouter()
-    const [isClient, setIsClient] = useState(false)
+    const [redirectUrl, setRedirectUrl] = useState('')
 
     useEffect(() => {
         setIsClient(true)
+        setRedirectUrl(`${window.location.origin}/update-password`)
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
             if (event === 'SIGNED_IN') {
                 router.push('/')
@@ -39,6 +41,7 @@ export default function LoginPage() {
                     appearance={{ theme: ThemeSupa }}
                     theme="default"
                     providers={[]}
+                    redirectTo={redirectUrl}
                 />
             </div>
         </div>
