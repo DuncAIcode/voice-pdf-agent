@@ -1,4 +1,5 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header, Depends
+from typing import Optional
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -32,6 +33,26 @@ llm_service = LLMService()
 supabase_url = os.environ.get("SUPABASE_URL")
 supabase_key = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
+
+def get_token(authorization: Optional[str] = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing Authorization Header")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid Authorization Header Format")
+    return authorization.split(" ")[1]
+
+def get_authenticated_client(token: str = Depends(get_token)):
+    # Create a new client instance with the user's token to respect RLS
+    # We pass the user's JWT as the Authorization header so Postgres sees auth.uid()
+    client = create_client(supabase_url, supabase_key)
+    client.postgrest.auth(token)
+    return client
+
+def get_user_id(token: str = Depends(get_token)):
+    user = supabase.auth.get_user(token)
+    if not user or not user.user:
+        raise HTTPException(status_code=401, detail="Invalid Token")
+    return user.user.id
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -68,10 +89,10 @@ async def download_file(filename: str):
     )
 
 @app.get("/documents")
-async def list_documents():
+async def list_documents(client: Client = Depends(get_authenticated_client)):
     try:
-        # Fetch from Supabase to get correct UUIDs
-        res = supabase.table("documents").select("*").order("created_at", desc=True).execute()
+        # Fetch from Supabase using authenticated client (RLS applies)
+        res = client.table("documents").select("*").order("created_at", desc=True).execute()
         db_docs = res.data if res.data else []
         
         docs = []
@@ -88,7 +109,7 @@ async def list_documents():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/upload-pdf")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(file: UploadFile = File(...), client: Client = Depends(get_authenticated_client), user_id: str = Depends(get_user_id)):
     try:
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_path, "wb") as buffer:
@@ -97,11 +118,12 @@ async def upload_pdf(file: UploadFile = File(...)):
         # Extract fields using PyMuPDF (fitz)
         fields = pdf_service.extract_fields(file_path)
         
-        # Store in Supabase
+        # Store in Supabase with user_id
         # 1. Create document record
-        doc_res = supabase.table("documents").insert({
+        doc_res = client.table("documents").insert({
             "original_name": file.filename,
-            "file_path": file_path
+            "file_path": file_path,
+            "user_id": user_id
         }).execute()
         
         if not doc_res.data:
@@ -123,7 +145,7 @@ async def upload_pdf(file: UploadFile = File(...)):
             })
             
         if field_records:
-            supabase.table("form_fields").insert(field_records).execute()
+            client.table("form_fields").insert(field_records).execute()
             
         return {
             "document_id": document_id,
@@ -135,8 +157,40 @@ async def upload_pdf(file: UploadFile = File(...)):
         print(f"Error in upload_pdf: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/documents/{document_id}")
+async def delete_document(document_id: str, client: Client = Depends(get_authenticated_client)):
+    try:
+        # 1. Get document path to delete file from disk (optional but good practice)
+        # We need to select it first to get the path. RLS ensures we only find it if we own it.
+        res = client.table("documents").select("file_path, original_name").eq("id", document_id).execute()
+        
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Document not found or access denied")
+            
+        doc = res.data[0]
+        file_path = doc.get("file_path")
+        
+        # 2. Delete from Supabase (Cascade should handle form_fields if configured, otherwise we delete doc)
+        client.table("documents").delete().eq("id", document_id).execute()
+        
+        # 3. Delete from disk
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                print(f"Deleted file: {file_path}")
+            except Exception as e:
+                print(f"Failed to delete physical file: {e}")
+
+        return {"message": "Document deleted successfully"}
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"Error deleting document: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/transcribe")
-async def transcribe_audio(file: UploadFile = File(...)):
+async def transcribe_audio(file: UploadFile = File(...), token: str = Depends(get_token)):
     try:
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_path, "wb") as buffer:
@@ -161,7 +215,7 @@ async def transcribe_audio(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-form-data")
-async def generate_form_data(request: dict):
+async def generate_form_data(request: dict, client: Client = Depends(get_authenticated_client)):
     # Expects { "text": "...", "fields": [...] }
     try:
         text = request.get("text", "")
@@ -170,7 +224,8 @@ async def generate_form_data(request: dict):
         
         # If document_id is provided, fetch fields from Supabase
         if document_id and not fields:
-            res = supabase.table("form_fields").select("*").eq("document_id", document_id).execute()
+            # RLS will filter by document ownership because form_fields policy checks document ownership
+            res = client.table("form_fields").select("*").eq("document_id", document_id).execute()
             if res.data:
                 fields = res.data
         
@@ -184,7 +239,7 @@ async def generate_form_data(request: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/fill-pdf")
-async def fill_pdf(request: dict):
+async def fill_pdf(request: dict, token: str = Depends(get_token)):
     # Expects { "filename": "...", "data": { "Field1": "Value1" } }
     try:
         filename = request.get("filename")

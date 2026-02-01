@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "../lib/supabase";
 import { API_BASE_URL } from "../lib/api";
 import { DocumentList } from "../components/document-list";
 import { RecordButton } from "../components/record-button";
@@ -14,6 +16,32 @@ export default function Home() {
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [activeFilename, setActiveFilename] = useState<string | null>(null);
   const [successFile, setSuccessFile] = useState<string | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/login");
+      } else {
+        setIsAuthChecking(false);
+      }
+    };
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        router.push('/login')
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [router]);
+
+  if (isAuthChecking) {
+    return <div className="h-full flex items-center justify-center bg-white"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
+  }
 
   const handleTranscriptionComplete = (data: any) => {
     setTranscriptionData(data);
@@ -146,6 +174,18 @@ export default function Home() {
       </div>
 
       <NavBar activeTab={activeTab === "review" ? "record" : activeTab} setActiveTab={setActiveTab} />
+
+      {/* Sign Out Button (Absolute for now) */}
+      <button
+        onClick={async () => {
+          await supabase.auth.signOut();
+          router.push("/login");
+        }}
+        className="absolute top-4 right-4 z-[100] p-2 text-slate-400 hover:text-red-500 transition-colors"
+        title="Sign Out"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+      </button>
     </main>
   );
 }

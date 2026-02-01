@@ -43,10 +43,25 @@
     - [x] Mount backend static files for PDF serving <!-- id: 29 -->
     - [x] Implement file listing/association logic <!-- id: 30 -->
     - [x] Update frontend UI to show generated PDF cards with download links <!-- id: 31 -->
+- [x] Phase 5: Deployment
+    - [x] Deploy Backend (VPS/Cloud) <!-- id: 22 -->
+    - [x] Deploy Frontend (Vercel/Netlify) <!-- id: 23 -->
+    - [x] Configure SSL/Domain <!-- id: 24 -->
+    - [x] Configure Vercel Root Directory to `frontend`
+    - [x] Cleanup temporary deployment scripts (security)
+- [/] Phase 6: User Authentication & Data Isolation
+    - [ ] Update `documents` table schema (add `user_id`, enable RLS)
+    - [ ] Implement Frontend Login/Signup Page (Supabase Auth)
+    - [ ] Protect Main App Route (Redirect if not logged in)
+    - [ ] Update Backend to verify JWT and filter data by User ID
+    - [ ] Implement Delete Document functionality (with confirmation)
+    - [ ] Verify functionality (User A cannot see User B's files)
 - [x] Verification
     - [x] Mobile UI Responsiveness Check <!-- id: 14 -->
     - [x] Full End-to-End Walkthrough (Initial Transcription) <!-- id: 15 -->
     - [x] Verification of complex PDF field population <!-- id: 28 -->
     - [x] Verification of PDF download and browser viewing <!-- id: 32 -->
-    - [x] Configure Vercel Root Directory to `frontend`
-    - [x] Cleanup temporary deployment scripts (security)
+
+## Current Status
+- Project Live.
+- Starting Phase 6: Implementing User Authentication to isolate user data.
