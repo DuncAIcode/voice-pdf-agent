@@ -116,11 +116,10 @@ export function ReviewPanel({ documentId, filename, transcriptionText, onComplet
                                         </span>
                                     </div>
                                 </div>
-                                <input
-                                    type="text"
+                                <textarea
                                     value={editedMappings[fieldName] || ""}
                                     onChange={(e) => handleInputChange(fieldName, e.target.value)}
-                                    className="w-full bg-transparent border-b border-slate-300 focus:border-blue-500 outline-none py-1 text-slate-800 transition-colors"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 focus:border-blue-500 outline-none text-slate-800 transition-colors min-h-[100px] resize-y"
                                 />
                                 {metadata?.reasoning && (
                                     <p className="mt-2 text-xs text-slate-500 italic">

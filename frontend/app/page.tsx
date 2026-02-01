@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { API_BASE_URL } from "../lib/api";
 import { DocumentList } from "../components/document-list";
 import { RecordButton } from "../components/record-button";
 import { NavBar } from "../components/nav-bar";
@@ -12,6 +13,7 @@ export default function Home() {
   const [transcriptionData, setTranscriptionData] = useState<any>(null);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [activeFilename, setActiveFilename] = useState<string | null>(null);
+  const [successFile, setSuccessFile] = useState<string | null>(null);
 
   const handleTranscriptionComplete = (data: any) => {
     setTranscriptionData(data);
@@ -93,10 +95,50 @@ export default function Home() {
                 onCancel={() => setActiveTab("record")}
                 onComplete={(finalData, filledFilename) => {
                   console.log("Final Polished Data:", finalData);
-                  alert(`Success! PDF generated: ${filledFilename}`);
-                  setActiveTab("documents");
+                  setSuccessFile(filledFilename);
+                  setActiveTab("review"); // Keep review tab active behind the modal
                 }}
               />
+            </div>
+          </div>
+        )}
+
+        {/* Success Modal */}
+        {successFile && (
+          <div className="absolute inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full text-center space-y-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+              <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Success!</h2>
+                <p className="text-slate-500 mt-2">Your PDF has been generated and is ready for download.</p>
+              </div>
+
+              <div className="space-y-3">
+                <a
+                  href={`${API_BASE_URL}/download/${successFile}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-full py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5"
+                >
+                  <svg className="mr-2" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Download PDF
+                </a>
+
+                <button
+                  onClick={() => {
+                    setSuccessFile(null);
+                    setActiveTab("documents");
+                    setActiveDocumentId(null);
+                    setActiveFilename(null);
+                    setTranscriptionData(null);
+                  }}
+                  className="w-full py-4 text-slate-500 font-semibold hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         )}
