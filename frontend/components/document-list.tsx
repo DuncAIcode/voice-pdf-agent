@@ -88,8 +88,11 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
 
     if (isLoading) {
         return (
-            <div className="w-full h-48 rounded-xl border-2 border-slate-200 flex items-center justify-center text-slate-400">
-                <div className="animate-pulse">Loading documents...</div>
+            <div className="w-full h-64 glass-panel flex items-center justify-center border-white/5">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-10 w-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                    <div className="text-slate-400 font-medium tracking-widest uppercase text-xs animate-pulse">Syncing Vault...</div>
+                </div>
             </div>
         );
     }
@@ -97,16 +100,20 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
     if (filteredDocuments.length === 0) {
         if (filter === 'completed') {
             return (
-                <div className="w-full h-48 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2 bg-slate-50">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    <span>No completed documents yet</span>
-                    <span className="text-xs text-slate-300">Generate one from the Record tab</span>
+                <div className="w-full py-16 glass-card border-dashed border-white/10 flex flex-col items-center justify-center text-slate-500 gap-4 bg-white/0">
+                    <div className="p-4 rounded-full bg-slate-800/50 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div className="text-center">
+                        <p className="font-bold text-slate-300">No output logs yet</p>
+                        <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">Generate filled PDFs from the session tab</p>
+                    </div>
                 </div>
             );
         }
 
         return (
-            <div className="w-full h-48 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2 relative overflow-hidden bg-slate-50 hover:bg-slate-100 transition-colors">
+            <div className="w-full py-16 glass-card border-dashed border-white/10 flex flex-col items-center justify-center text-slate-400 gap-6 relative overflow-hidden group hover:bg-white/[0.02] transition-all cursor-pointer">
                 <input
                     type="file"
                     accept=".pdf"
@@ -114,97 +121,120 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
                     disabled={isUploading}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                 />
+                <div className="p-4 rounded-full bg-blue-500/10 text-blue-400 group-hover:scale-110 transition-transform duration-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                </div>
                 {isUploading ? (
-                    <div className="animate-pulse">Uploading...</div>
+                    <div className="text-center space-y-2">
+                        <div className="text-blue-400 font-bold tracking-widest uppercase text-xs animate-pulse">Uploading Document</div>
+                        <div className="h-1 w-32 bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 animate-progress" style={{ width: '60%' }} />
+                        </div>
+                    </div>
                 ) : (
-                    <>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg>
-                        <span>No documents yet</span>
-                        <span className="text-xs text-slate-300">Tap to upload a PDF</span>
-                    </>
+                    <div className="text-center">
+                        <p className="font-bold text-slate-200">The vault is currently empty</p>
+                        <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">Tap to upload your first template</p>
+                    </div>
                 )}
             </div>
         );
     }
 
     return (
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-6">
             {filter === 'input' && (
-                <label className="block w-full text-center p-2 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-sm cursor-pointer hover:bg-slate-50">
-                    {isUploading ? "Uploading..." : "Upload another PDF"}
+                <label className="group block w-full text-center p-4 border-2 border-dashed border-white/5 rounded-2xl text-slate-400 text-sm cursor-pointer hover:bg-white/[0.02] hover:border-blue-500/20 transition-all">
+                    <div className="flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span className="font-semibold">{isUploading ? "Uploading..." : "ADD NEW TEMPLATE"}</span>
+                    </div>
                     <input type="file" accept=".pdf" onChange={handleUpload} disabled={isUploading} className="hidden" />
                 </label>
             )}
-            <ul className="w-full space-y-3">
+            <div className="w-full space-y-4">
                 {filteredDocuments.map((doc) => (
-                    <li
+                    <div
                         key={doc.id}
-                        className={`p-4 rounded-xl border transition-all ${doc.is_filled
-                            ? 'bg-green-50 border-green-200 shadow-sm'
-                            : 'bg-white border-slate-100 hover:border-slate-300 shadow-sm'
+                        className={`group relative overflow-hidden glass-card p-5 border transition-all duration-300 ${doc.is_filled
+                            ? 'border-green-500/20 hover:border-green-500/40 bg-green-500/5'
+                            : 'border-white/5 hover:border-white/20 hover:bg-white/5 shadow-lg'
                             }`}
                     >
-                        <div className="flex items-start justify-between gap-3">
+                        {/* Selected Indicator */}
+                        {activeDocumentId === doc.id && (
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />
+                        )}
+
+                        <div className="flex items-center gap-5">
+                            {/* File Icon */}
+                            <div className={`p-3 rounded-2xl ${doc.is_filled ? 'bg-green-500/10 text-green-400' : 'bg-slate-800 text-slate-400'
+                                }`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                            </div>
+
+                            {/* Content */}
                             <div
                                 onClick={() => onSelect?.(doc.id, doc.filename)}
-                                className="flex items-center space-x-3 flex-1 cursor-pointer"
+                                className="flex-1 min-w-0 cursor-pointer"
                             >
-                                <div className={`p-2 rounded-lg ${doc.is_filled ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'
-                                    }`}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                    </svg>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <span className={`truncate font-medium block ${doc.is_filled ? 'text-green-700' : 'text-slate-700'
-                                            }`}>
-                                            {doc.filename}
-                                        </span>
-                                        {doc.is_filled && (
-                                            <span className="px-2 py-0.5 bg-green-500 text-white text-[10px] font-bold rounded-full uppercase whitespace-nowrap">
-                                                Filled
-                                            </span>
-                                        )}
-                                    </div>
-                                    {doc.created_at && (
-                                        <span className="text-[10px] text-slate-400 uppercase font-semibold">
-                                            {new Date(typeof doc.created_at === 'number' ? doc.created_at * 1000 : doc.created_at).toLocaleDateString()}
+                                <div className="flex items-center gap-2 mb-1">
+                                    <h3 className={`truncate font-bold text-sm tracking-tight ${doc.is_filled ? 'text-green-400' : 'text-slate-100'
+                                        }`}>
+                                        {doc.filename}
+                                    </h3>
+                                    {doc.is_filled && (
+                                        <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-[9px] font-black rounded-sm uppercase tracking-tighter border border-green-500/30">
+                                            LOCKED
                                         </span>
                                     )}
                                 </div>
+                                <div className="flex items-center gap-3">
+                                    {doc.created_at && (
+                                        <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">
+                                            {new Date(typeof doc.created_at === 'number' ? doc.created_at * 1000 : doc.created_at).toLocaleDateString()}
+                                        </span>
+                                    )}
+                                    <span className="h-1 w-1 rounded-full bg-slate-700" />
+                                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
+                                        PDF ASSET
+                                    </span>
+                                </div>
                             </div>
-                            <a
-                                href={`${API_BASE_URL}/download/${doc.filename}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${doc.is_filled
-                                    ? 'bg-green-600 text-white hover:bg-green-700'
-                                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                                    }`}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <span className="flex items-center gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="7 10 12 15 17 10"></polyline>
-                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-2">
+                                <a
+                                    href={`${API_BASE_URL}/download/${doc.filename}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`p-2.5 rounded-xl transition-all duration-300 shadow-xl ${doc.is_filled
+                                        ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                                        : 'bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 shadow-blue-500/10'
+                                        }`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    title="View Template"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
                                     </svg>
-                                    View
-                                </span>
-                            </a>
-                            <button
-                                onClick={(e) => handleDelete(doc.id, doc.filename, e)}
-                                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                title="Delete Document"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                            </button>
+                                </a>
+                                <button
+                                    onClick={(e) => handleDelete(doc.id, doc.filename, e)}
+                                    className="p-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all duration-300"
+                                    title="Purge Document"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
+                            </div>
                         </div>
-                    </li>
+                    </div>
                 ))}
-            </ul>
+            </div>
         </div>
     );
 }

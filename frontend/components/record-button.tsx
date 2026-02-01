@@ -104,81 +104,112 @@ export function RecordButton({ onTranscriptionComplete }: RecordButtonProps) {
     };
 
     return (
-        <div className="flex flex-col items-center space-y-6 w-full max-w-sm">
+        <div className="flex flex-col items-center space-y-12 w-full max-w-sm">
             {/* Visualizer Area */}
-            <div className={`w-full transition-opacity duration-300 ${isRecording ? 'opacity-100' : 'opacity-0 h-0 hidden'}`}>
-                <AudioVisualizer stream={stream} isRecording={isRecording && !isPaused} />
-                <p className="text-center text-sm text-slate-500 mt-2">
-                    {isPaused ? "Recording Paused" : "Listening..."}
-                </p>
+            <div className={`w-full transition-all duration-500 overflow-hidden ${isRecording ? 'opacity-100 max-h-40' : 'opacity-0 max-h-0'}`}>
+                <div className="glass-card p-6 border-blue-500/20 bg-blue-500/5 backdrop-blur-xl">
+                    <AudioVisualizer stream={stream} isRecording={isRecording && !isPaused} />
+                    <p className="text-center text-xs font-bold tracking-widest uppercase text-blue-400 mt-4 animate-pulse">
+                        {isPaused ? "Recording Paused" : "AI Listening..."}
+                    </p>
+                </div>
             </div>
 
-            {/* Controls */}
-            <div className="flex items-center space-x-6">
+            {/* Main Interaction Area */}
+            <div className="relative flex items-center justify-center">
 
-                {/* Pause/Resume Button (Only visible when recording) */}
-                {(isRecording || isPaused) && (
+                {/* Background Pulse Rings (Visible when recording) */}
+                {(isRecording && !isPaused) && (
+                    <>
+                        <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-pulse-ring" style={{ animationDelay: '0s' }} />
+                        <div className="absolute inset-0 rounded-full bg-blue-500/10 animate-pulse-ring" style={{ animationDelay: '0.5s' }} />
+                        <div className="absolute inset-0 rounded-full bg-blue-500/5 animate-pulse-ring" style={{ animationDelay: '1s' }} />
+                    </>
+                )}
+
+                {/* Main Button Group */}
+                <div className="relative flex items-center space-x-8">
+
+                    {/* Secondary Controls (Pause/Resume) */}
+                    {(isRecording || isPaused) && (
+                        <button
+                            onClick={togglePause}
+                            className="h-14 w-14 rounded-full glass-panel flex items-center justify-center text-white hover:bg-white/10 transition-all active:scale-90"
+                            title={isPaused ? "Resume" : "Pause"}
+                        >
+                            {isPaused ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="ml-1">
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                                </svg>
+                            )}
+                        </button>
+                    )}
+
+                    {/* Main Circular Button */}
                     <button
-                        onClick={togglePause}
-                        className="h-12 w-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors shadow-sm"
-                        title={isPaused ? "Resume" : "Pause"}
+                        onClick={handleMainButtonClick}
+                        disabled={isProcessing}
+                        className={`group relative h-28 w-28 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xl ${isRecording || isPaused
+                            ? "bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/40 hover:scale-105"
+                            : isProcessing
+                                ? "bg-slate-800 cursor-not-allowed scale-95 opacity-50"
+                                : "bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 shadow-blue-500/40 hover:scale-110 active:scale-95 translate-y-0 hover:-translate-y-1"
+                            }`}
                     >
-                        {isPaused ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polygon points="5 3 19 12 5 21 5 3" />
-                            </svg>
+                        {/* Internal Glow */}
+                        <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                        {isProcessing ? (
+                            <div className="flex flex-col items-center">
+                                <div className="h-10 w-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                            </div>
+                        ) : (isRecording || isPaused) ? (
+                            <div className="h-10 w-10 bg-white rounded-2xl shadow-inner animate-in zoom-in duration-300" />
                         ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="6" y="4" width="4" height="16" />
-                                <rect x="14" y="4" width="4" height="16" />
-                            </svg>
+                            <div className="flex flex-col items-center">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="40"
+                                    height="40"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="text-white drop-shadow-lg"
+                                >
+                                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                    <line x1="12" x2="12" y1="19" y2="22" />
+                                </svg>
+                            </div>
                         )}
                     </button>
-                )}
 
-                {/* Main Record/Stop Button */}
-                <button
-                    onClick={handleMainButtonClick}
-                    disabled={isProcessing}
-                    className={`h-20 w-20 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${isRecording || isPaused
-                        ? "bg-red-500 hover:bg-red-600 scale-110"
-                        : isProcessing
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-blue-600 hover:bg-blue-700"
-                        }`}
-                >
-                    <span className="sr-only">
-                        {(isRecording || isPaused) ? "Stop Recording" : isProcessing ? "Processing..." : "Record"}
-                    </span>
-                    {isProcessing ? (
-                        <div className="h-8 w-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (isRecording || isPaused) ? (
-                        <div className="h-8 w-8 bg-white rounded-md" />
-                    ) : (
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="32"
-                            height="32"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-white"
-                        >
-                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                            <line x1="12" x2="12" y1="19" y2="22" />
-                        </svg>
+                    {/* Spacer/Empty div to keep main button centered if Pause isn't there */}
+                    {!(isRecording || isPaused) && (
+                        <div className="w-0" />
                     )}
-                </button>
+                </div>
+            </div>
 
-                {/* Spacer to keep main button centered relative to Pause button if we added a third button later */}
-                {(isRecording || isPaused) && (
-                    <div className="w-12" />
+            {/* Status Text (Below button) */}
+            <div className="text-center h-4">
+                {!isRecording && !isProcessing && (
+                    <p className="text-slate-500 text-sm font-medium animate-in fade-in slide-in-from-bottom-2 duration-700">
+                        Tap to begin recording
+                    </p>
                 )}
-
+                {isProcessing && (
+                    <p className="text-blue-400 text-sm font-bold tracking-widest uppercase animate-pulse">
+                        Analyzing Audio
+                    </p>
+                )}
             </div>
         </div>
     );

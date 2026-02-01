@@ -24,10 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full bg-slate-50 text-slate-900">
-      <body className={`${inter.className} h-full antialiased`}>
-        <div className="mx-auto flex h-full max-w-md flex-col bg-white shadow-2xl overflow-hidden">
-          {children}
+    <html lang="en" className="h-full">
+      <body className={`${inter.className} h-full antialiased bg-background text-foreground`}>
+        <div className="mx-auto flex h-full max-w-md flex-col overflow-hidden relative">
+          <main className="flex-1 overflow-y-auto pb-20">
+            {children}
+          </main>
         </div>
       </body>
     </html>

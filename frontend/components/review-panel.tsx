@@ -71,9 +71,17 @@ export function ReviewPanel({ documentId, filename, transcriptionText, onComplet
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 space-y-4 bg-white rounded-2xl shadow-xl border border-slate-100 animate-pulse">
-                <div className="h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                <p className="text-slate-500 font-medium">AI is mapping your transcription...</p>
+            <div className="flex flex-col items-center justify-center p-16 space-y-8 glass-panel border-white/5 bg-slate-900/40 backdrop-blur-3xl animate-pulse">
+                <div className="relative">
+                    <div className="h-20 w-20 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="h-10 w-10 bg-blue-500/10 rounded-full animate-ping" />
+                    </div>
+                </div>
+                <div className="text-center">
+                    <p className="text-blue-400 font-black tracking-widest uppercase text-xs">AI Neural Mapping</p>
+                    <p className="text-slate-500 text-sm mt-1">Synthesizing transcription insights...</p>
+                </div>
             </div>
         );
     }
@@ -81,22 +89,27 @@ export function ReviewPanel({ documentId, filename, transcriptionText, onComplet
     if (!mappedData) return null;
 
     return (
-        <div className="w-full flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-            <div className="bg-slate-50 p-6 border-b border-slate-200 flex justify-between items-center">
+        <div className="w-full flex flex-col glass-card border-white/5 bg-slate-900/20 backdrop-blur-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500 shadow-2xl">
+            {/* Header */}
+            <div className="p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-blue-500/5 to-transparent">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-900">Review & Edit</h2>
-                    <p className="text-sm text-slate-500">Verify the AI-mapped information</p>
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                        <h2 className="text-xl font-black text-white tracking-tight uppercase">Data Intelligence</h2>
+                    </div>
+                    <p className="text-xs text-slate-500 font-bold tracking-widest uppercase">Verification Protocol</p>
                 </div>
                 <button
                     onClick={onCancel}
-                    className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors"
+                    className="group glass-panel h-12 w-12 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition-all active:scale-90"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:rotate-90 transition-transform"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto max-h-[60vh] p-6 space-y-6">
-                <div className="grid grid-cols-1 gap-4">
+            {/* Scroll Area */}
+            <div className="flex-1 overflow-y-auto max-h-[60vh] p-8 space-y-8 custom-scrollbar">
+                <div className="grid grid-cols-1 gap-6">
                     {Object.keys(editedMappings).map((fieldName) => {
                         const metadata = mappedData.field_metadata[fieldName];
                         const confidence = metadata?.confidence || 0;
@@ -104,27 +117,36 @@ export function ReviewPanel({ documentId, filename, transcriptionText, onComplet
                         const isAmbiguous = metadata?.is_ambiguous;
 
                         return (
-                            <div key={fieldName} className={`p-4 rounded-xl border transition-all ${isLowConfidence || isAmbiguous ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100 shadow-sm'}`}>
-                                <div className="flex justify-between items-start mb-2">
-                                    <label className="text-sm font-semibold text-slate-700">{fieldName}</label>
+                            <div key={fieldName} className={`group p-6 rounded-2xl glass-panel border-white/5 transition-all duration-300 ${isLowConfidence || isAmbiguous ? 'bg-red-500/5 border-red-500/20' : 'bg-white/0 hover:bg-white/[0.02] border-white/5 hover:border-white/10'}`}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${isLowConfidence ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                                            <span className="text-[10px] font-black">{fieldName.charAt(0).toUpperCase()}</span>
+                                        </div>
+                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">{fieldName}</label>
+                                    </div>
                                     <div className="flex items-center space-x-2">
                                         {isAmbiguous && (
-                                            <span className="bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Ambiguous</span>
+                                            <span className="bg-red-500/20 text-red-400 text-[10px] px-3 py-1 rounded-sm font-black uppercase tracking-tighter border border-red-500/30">Ambiguous</span>
                                         )}
-                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${confidence > 0.8 ? 'bg-green-100 text-green-600' : confidence > 0.5 ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
-                                            {Math.round(confidence * 100)}% Match
+                                        <span className={`text-[10px] px-3 py-1 rounded-sm font-black uppercase tracking-tighter border ${confidence > 0.8 ? 'bg-green-500/20 text-green-400 border-green-500/30' : confidence > 0.5 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                                            {Math.round(confidence * 100)}% RELIABILITY
                                         </span>
                                     </div>
                                 </div>
                                 <textarea
                                     value={editedMappings[fieldName] || ""}
                                     onChange={(e) => handleInputChange(fieldName, e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 focus:border-blue-500 outline-none text-slate-800 transition-colors min-h-[100px] resize-y"
+                                    className="w-full bg-slate-900/40 border border-white/5 rounded-xl p-4 focus:border-blue-500/50 outline-none text-slate-100 transition-all font-medium min-h-[100px] resize-y placeholder-slate-700 shadow-inner"
+                                    placeholder="Empty value detected..."
                                 />
                                 {metadata?.reasoning && (
-                                    <p className="mt-2 text-xs text-slate-500 italic">
-                                        <span className="font-semibold not-italic">AI Reasoning:</span> {metadata.reasoning}
-                                    </p>
+                                    <div className="mt-4 flex gap-2">
+                                        <div className="h-4 w-[2px] bg-blue-500/40 mt-0.5" />
+                                        <p className="text-[11px] text-slate-500 font-medium italic leading-relaxed">
+                                            <span className="text-blue-400/60 font-black not-italic inline-block mr-1">AI_LOG:</span> {metadata.reasoning}
+                                        </p>
+                                    </div>
                                 )}
                             </div>
                         );
@@ -132,24 +154,29 @@ export function ReviewPanel({ documentId, filename, transcriptionText, onComplet
                 </div>
             </div>
 
-            <div className="p-6 bg-slate-50 border-t border-slate-200 flex space-x-3">
+            {/* Footer */}
+            <div className="p-8 border-t border-white/5 flex gap-4 bg-slate-900/40">
                 <button
                     onClick={onCancel}
-                    className="flex-1 py-3 px-4 rounded-xl bg-white border border-slate-200 text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm"
+                    className="flex-1 py-4 px-6 rounded-2xl glass-panel text-slate-400 font-black tracking-widest uppercase text-xs hover:text-white hover:bg-white/5 transition-all active:scale-95"
                 >
                     Discard
                 </button>
                 <button
                     onClick={handleSave}
                     disabled={isGeneratingPdf}
-                    className="flex-[2] py-3 px-4 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center space-x-2"
+                    className="flex-[2] relative overflow-hidden group py-4 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-black tracking-widest uppercase text-xs shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                 >
+                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                     {isGeneratingPdf ? (
-                        <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <>
+                            <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                            <span>Synthesizing PDF...</span>
+                        </>
                     ) : (
                         <>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                            <span>Generate & Finalize PDF</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>
+                            <span>DEPLOY FINAL ASSET</span>
                         </>
                     )}
                 </button>
