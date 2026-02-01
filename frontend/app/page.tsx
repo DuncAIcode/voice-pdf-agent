@@ -32,7 +32,9 @@ export default function Home() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
+      if (event === 'PASSWORD_RECOVERY') {
+        router.push('/update-password');
+      } else if (event === 'SIGNED_OUT' || !session) {
         router.push('/login')
       }
     })
