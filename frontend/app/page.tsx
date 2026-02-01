@@ -67,17 +67,45 @@ export default function Home() {
           className={`absolute inset-0 flex flex-col items-center p-6 transition-all duration-500 overflow-y-auto ${activeTab === 'record' ? 'opacity-100 translate-y-0 z-10' : 'opacity-0 translate-y-4 z-0 pointer-events-none'
             }`}
         >
-          <div className="text-center space-y-2 mt-8 mb-12 shrink-0 animate-in fade-in slide-in-from-top-4 duration-700">
-            <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
-              Voice to <span className="text-blue-400">PDF</span> AI
-            </h2>
+          <div className="text-center space-y-4 mt-8 mb-16 shrink-0 animate-in fade-in slide-in-from-top-8 duration-1000">
+            <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-white">
+              Voice to <span className="text-gradient">PDF</span> AI
+            </h1>
+            <p className="text-slate-500 text-base font-medium max-w-xs mx-auto leading-relaxed">
+              Neural document synthesis for the modern enterprise.
+            </p>
+
             {activeFilename ? (
-              <div className="px-4 py-2 glass-card inline-flex items-center space-x-2 border border-blue-500/30">
-                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                <p className="text-blue-400 text-sm font-semibold truncate max-w-[200px]">{activeFilename}</p>
+              <div className="mt-6 px-5 py-2.5 glass-card inline-flex items-center space-x-3 border border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.15)] scale-110">
+                <span className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_#3b82f6]"></span>
+                <p className="text-blue-400 text-sm font-bold tracking-wide uppercase">{activeFilename}</p>
               </div>
             ) : (
-              <p className="text-slate-500 text-sm">Select a document template to begin mapping.</p>
+              <div className="w-full max-w-lg mx-auto grid grid-cols-3 gap-3 mt-12 px-2">
+                <div className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border-white/5 bg-white/[0.02] group hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 10v6m-3-3h6m-3-10a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2Z" /></svg>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Step 1</span>
+                  <span className="text-xs font-bold text-slate-200">Vault & Upload</span>
+                </div>
+
+                <div className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border-white/5 bg-white/[0.02] group hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /></svg>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Step 2</span>
+                  <span className="text-xs font-bold text-slate-200">Record Narrative</span>
+                </div>
+
+                <div className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border-white/5 bg-white/[0.02] group hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14l-2 2-2-2M12 11V3m0 18v-5" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M21 5c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M21 19c0 1.66-4 3-9 3s-9-1.34-9-3" /></svg>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Step 3</span>
+                  <span className="text-xs font-bold text-slate-200">AI Magic</span>
+                </div>
+              </div>
             )}
           </div>
 
