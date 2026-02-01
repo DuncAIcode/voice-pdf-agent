@@ -80,6 +80,7 @@ export default function Home() {
             <DocumentList
               onSelect={handleDocumentSelect}
               activeDocumentId={activeDocumentId}
+              isActive={activeTab === 'documents'}
             />
           </div>
         </div>

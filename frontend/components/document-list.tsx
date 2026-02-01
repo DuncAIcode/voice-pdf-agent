@@ -14,17 +14,20 @@ type Doc = {
 interface DocumentListProps {
     onSelect?: (id: string, filename: string) => void;
     activeDocumentId?: string | null;
+    isActive?: boolean;
 }
 
-export function DocumentList({ onSelect, activeDocumentId }: DocumentListProps) {
+export function DocumentList({ onSelect, activeDocumentId, isActive = false }: DocumentListProps) {
     const [documents, setDocuments] = useState<Doc[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Fetch documents on mount
+    // Fetch documents on mount or when active
     useEffect(() => {
-        fetchDocuments();
-    }, []);
+        if (isActive) {
+            fetchDocuments();
+        }
+    }, [isActive]);
 
     const fetchDocuments = async () => {
         try {
