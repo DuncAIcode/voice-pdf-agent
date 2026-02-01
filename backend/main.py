@@ -69,20 +69,23 @@ async def download_file(filename: str):
 
 @app.get("/documents")
 async def list_documents():
-    docs = []
-    for filename in os.listdir(UPLOAD_DIR):
-        if filename.endswith(".pdf"):
-            file_path = os.path.join(UPLOAD_DIR, filename)
-            stats = os.stat(file_path)
+    try:
+        # Fetch from Supabase to get correct UUIDs
+        res = supabase.table("documents").select("*").order("created_at", desc=True).execute()
+        db_docs = res.data if res.data else []
+        
+        docs = []
+        for d in db_docs:
             docs.append({
-                "id": filename, # Using filename as ID for simplicity on files
-                "filename": filename,
-                "is_filled": filename.startswith("filled_"),
-                "created_at": stats.st_ctime
+                "id": d["id"],
+                "filename": d["original_name"],
+                "is_filled": d["original_name"].startswith("filled_"),
+                "created_at": d["created_at"]
             })
-    # Sort by creation time descending
-    docs.sort(key=lambda x: x["created_at"], reverse=True)
-    return docs
+        return docs
+    except Exception as e:
+        print(f"Error listing documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/upload-pdf")
 async def upload_pdf(file: UploadFile = File(...)):
