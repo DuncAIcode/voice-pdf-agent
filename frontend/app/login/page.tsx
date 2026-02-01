@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 
 export default function LoginPage() {
     const router = useRouter()
+    const [isClient, setIsClient] = useState(false)
     const [redirectUrl, setRedirectUrl] = useState('')
 
     useEffect(() => {
