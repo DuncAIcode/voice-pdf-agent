@@ -39,6 +39,7 @@
     - [x] Allow manual override of AI-mapped values in the UI <!-- id: 26 -->
     - [x] Generate final populated PDF and provide download link <!-- id: 27 -->
 - [x] Phase 4: Generated PDF Display & Download
+    - [x] Analyze backend logs and fix 500 error on `/generate-form-data`
     - [x] Mount backend static files for PDF serving <!-- id: 29 -->
     - [x] Implement file listing/association logic <!-- id: 30 -->
     - [x] Update frontend UI to show generated PDF cards with download links <!-- id: 31 -->
@@ -48,3 +49,4 @@
     - [x] Verification of complex PDF field population <!-- id: 28 -->
     - [x] Verification of PDF download and browser viewing <!-- id: 32 -->
     - [x] Configure Vercel Root Directory to `frontend`
+    - [x] Cleanup temporary deployment scripts (security)
