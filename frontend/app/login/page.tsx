@@ -40,7 +40,7 @@ export default function LoginPage() {
                         </svg>
                     </div>
                     <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
-                        Voice<span className="text-blue-400">AI</span>
+                        Voice to <span className="text-blue-400">PDF</span> AI
                     </h2>
                     <p className="text-slate-400 text-sm">
                         Enterprise Document Agent

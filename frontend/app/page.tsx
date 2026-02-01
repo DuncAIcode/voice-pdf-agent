@@ -68,9 +68,9 @@ export default function Home() {
             }`}
         >
           <div className="text-center space-y-2 mt-8 mb-12 shrink-0 animate-in fade-in slide-in-from-top-4 duration-700">
-            <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
-              Voice<span className="text-blue-500">AI</span> Agent
-            </h1>
+            <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
+              Voice to <span className="text-blue-400">PDF</span> AI
+            </h2>
             {activeFilename ? (
               <div className="px-4 py-2 glass-card inline-flex items-center space-x-2 border border-blue-500/30">
                 <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
