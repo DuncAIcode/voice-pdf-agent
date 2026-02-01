@@ -79,6 +79,31 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
         }
     };
 
+    const handleShare = async (filename: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            const response = await fetch(`${API_BASE_URL}/download/${filename}`);
+            const blob = await response.blob();
+            const file = new File([blob], filename, { type: 'application/pdf' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: filename,
+                    text: 'Generated via Voice to PDF AI',
+                });
+            } else {
+                await navigator.share({
+                    title: filename,
+                    url: `${API_BASE_URL}/download/${filename}`
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing document:', error);
+            window.open(`${API_BASE_URL}/download/${filename}`, '_blank');
+        }
+    };
+
     const filteredDocuments = documents.filter(doc => {
         if (filter === 'all') return true;
         if (filter === 'input') return !doc.filename.startsWith('filled_');
@@ -223,6 +248,15 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
                                         <circle cx="12" cy="12" r="3"></circle>
                                     </svg>
                                 </a>
+                                {doc.is_filled && (
+                                    <button
+                                        onClick={(e) => handleShare(doc.filename, e)}
+                                        className="p-2.5 rounded-xl bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-all duration-300"
+                                        title="Share Asset"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                                    </button>
+                                )}
                                 <button
                                     onClick={(e) => handleDelete(doc.id, doc.filename, e)}
                                     className="p-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all duration-300"

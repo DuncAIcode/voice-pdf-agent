@@ -49,6 +49,32 @@ export default function Home() {
     setTranscriptionData(data);
   };
 
+  const handleShare = async (filename: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/download/${filename}`);
+      const blob = await response.blob();
+      const file = new File([blob], filename, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: filename,
+          text: 'Generated via Voice to PDF AI',
+        });
+      } else {
+        // Fallback for browsers that support sharing links but not files
+        await navigator.share({
+          title: filename,
+          url: `${API_BASE_URL}/download/${filename}`
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing document:', error);
+      // Fallback: trigger a normal download if sharing fails
+      window.open(`${API_BASE_URL}/download/${filename}`, '_blank');
+    }
+  };
+
   const handleDocumentSelect = (docId: string, filename: string) => {
     setActiveDocumentId(docId);
     setActiveFilename(filename);
@@ -199,6 +225,14 @@ export default function Home() {
                   <svg className="mr-3" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                   Download PDF
                 </a>
+
+                <button
+                  onClick={() => handleShare(successFile)}
+                  className="flex items-center justify-center w-full py-5 glass-panel text-white font-bold rounded-2xl border-white/10 hover:bg-white/10 transition-all transform active:scale-[0.98]"
+                >
+                  <svg className="mr-3" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                  Share Document
+                </button>
 
                 <button
                   onClick={() => {
