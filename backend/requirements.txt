@@ -12,3 +12,5 @@ torchaudio
 torchvision
 pandas
 setuptools-rust
+python-docx
+docxtpl

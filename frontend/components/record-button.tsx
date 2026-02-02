@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { api } from "../lib/api";
 import { AudioVisualizer } from "./audio-visualizer";
+import { audioStorage } from "../lib/audio-storage";
 
 interface RecordButtonProps {
     onTranscriptionComplete?: (data: any) => void;
@@ -37,6 +38,17 @@ export function RecordButton({ onTranscriptionComplete }: RecordButtonProps) {
 
             mediaRecorder.onstop = async () => {
                 const audioBlob = new Blob(chunksRef.current, { type: "audio/wav" });
+
+                // --- SAFETY VAULT: Mirror to local device memory ---
+                const timestamp = new Date().toLocaleString();
+                const backupFilename = `Recording_${timestamp.replace(/[/,:]/g, '-')}.wav`;
+                try {
+                    await audioStorage.saveRecording(audioBlob, backupFilename);
+                    console.log("Audio mirrored to local vault:", backupFilename);
+                } catch (e) {
+                    console.error("Failed to mirror audio to local vault:", e);
+                }
+                // ----------------------------------------------------
 
                 // Cleanup stream
                 if (streamRef.current) {

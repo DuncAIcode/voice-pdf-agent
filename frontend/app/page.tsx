@@ -9,6 +9,7 @@ import { RecordButton } from "../components/record-button";
 import { NavBar } from "../components/nav-bar";
 import { TranscriptionDisplay } from "../components/transcription-display";
 import { ReviewPanel } from "../components/review-panel";
+import { LocalBackups } from "../components/local-backups";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"record" | "documents" | "completed" | "review">("record");
@@ -53,7 +54,8 @@ export default function Home() {
     try {
       const response = await fetch(`${API_BASE_URL}/download/${filename}`);
       const blob = await response.blob();
-      const file = new File([blob], filename, { type: 'application/pdf' });
+      const mimeType = filename.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      const file = new File([blob], filename, { type: mimeType });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -75,10 +77,12 @@ export default function Home() {
     }
   };
 
-  const handleDocumentSelect = (docId: string, filename: string) => {
+  const handleDocumentSelect = (docId: string, filename: string, shouldRedirect: boolean = true) => {
     setActiveDocumentId(docId);
     setActiveFilename(filename);
-    setActiveTab("record");
+    if (shouldRedirect) {
+      setActiveTab("record");
+    }
   };
 
   return (
@@ -137,6 +141,7 @@ export default function Home() {
 
           <div className="w-full flex flex-col items-center shrink-0">
             <RecordButton onTranscriptionComplete={handleTranscriptionComplete} />
+            <LocalBackups onRetrySuccess={handleTranscriptionComplete} />
           </div>
 
           {/* Transcription Results Area */}
@@ -212,7 +217,9 @@ export default function Home() {
 
               <div>
                 <h2 className="text-3xl font-bold text-white">Document Ready</h2>
-                <p className="text-slate-400 mt-3 text-sm leading-relaxed">AI mapping successfully verified. Your document is prepared for enterprise use.</p>
+                <p className="text-slate-400 mt-3 text-sm leading-relaxed">
+                  AI mapping successfully verified. Your {successFile?.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Word doc'} is prepared for enterprise use.
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -223,7 +230,7 @@ export default function Home() {
                   className="flex items-center justify-center w-full py-5 bg-white text-slate-950 font-bold rounded-2xl shadow-xl hover:bg-slate-100 transition-all transform active:scale-[0.98]"
                 >
                   <svg className="mr-3" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                  Download PDF
+                  Download {successFile?.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Word Doc'}
                 </a>
 
                 <button

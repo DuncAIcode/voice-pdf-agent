@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api, API_BASE_URL } from "../lib/api";
+import { TemplateWizard } from "./template-wizard";
 
 type Doc = {
     id: string;
@@ -12,7 +13,7 @@ type Doc = {
 };
 
 interface DocumentListProps {
-    onSelect?: (id: string, filename: string) => void;
+    onSelect?: (id: string, filename: string, shouldRedirect?: boolean) => void;
     activeDocumentId?: string | null;
     isActive?: boolean;
     filter?: 'all' | 'input' | 'completed';
@@ -22,6 +23,7 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
     const [documents, setDocuments] = useState<Doc[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [wizardFilename, setWizardFilename] = useState<string | null>(null);
 
     // Fetch documents on mount or when active
     useEffect(() => {
@@ -51,10 +53,17 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
         const file = e.target.files[0];
 
         try {
-            const result = await api.uploadPDF(file);
+            const result = await api.uploadDocument(file);
             console.log("Upload result:", result);
             await fetchDocuments(); // Refresh the list
-            onSelect?.(result.document_id, result.filename);
+
+            // Trigger Wizard if it's a Word doc with no tags
+            const isWord = file.name.toLowerCase().endsWith(".docx") || file.name.toLowerCase().endsWith(".doc");
+            if (isWord && result.fields_count === 0) {
+                setWizardFilename(result.filename);
+            } else {
+                onSelect?.(result.document_id, result.filename, false);
+            }
         } catch (error) {
             console.error("Upload failed", error);
             alert("Upload failed");
@@ -84,7 +93,8 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
         try {
             const response = await fetch(`${API_BASE_URL}/download/${filename}`);
             const blob = await response.blob();
-            const file = new File([blob], filename, { type: 'application/pdf' });
+            const mimeType = filename.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            const file = new File([blob], filename, { type: mimeType });
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({
@@ -141,7 +151,7 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
             <div className="w-full py-16 glass-card border-dashed border-white/10 flex flex-col items-center justify-center text-slate-400 gap-6 relative overflow-hidden group hover:bg-white/[0.02] transition-all cursor-pointer">
                 <input
                     type="file"
-                    accept=".pdf"
+                    accept=".pdf,.docx,.doc,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     onChange={handleUpload}
                     disabled={isUploading}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
@@ -174,7 +184,13 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         <span className="font-semibold">{isUploading ? "Uploading..." : "ADD NEW TEMPLATE"}</span>
                     </div>
-                    <input type="file" accept=".pdf" onChange={handleUpload} disabled={isUploading} className="hidden" />
+                    <input
+                        type="file"
+                        accept=".pdf,.docx,.doc,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        onChange={handleUpload}
+                        disabled={isUploading}
+                        className="hidden"
+                    />
                 </label>
             )}
             <div className="w-full space-y-4">
@@ -195,15 +211,24 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
                             {/* File Icon */}
                             <div className={`p-3 rounded-2xl ${doc.is_filled ? 'bg-green-500/10 text-green-400' : 'bg-slate-800 text-slate-400'
                                 }`}>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                </svg>
+                                {doc.filename.toLowerCase().endsWith('.pdf') ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <path d="M9 12h6"></path>
+                                        <path d="M9 16h6"></path>
+                                    </svg>
+                                )}
                             </div>
 
                             {/* Content */}
                             <div
-                                onClick={() => onSelect?.(doc.id, doc.filename)}
+                                onClick={() => onSelect?.(doc.id, doc.filename, true)}
                                 className="flex-1 min-w-0 cursor-pointer"
                             >
                                 <div className="flex items-center gap-2 mb-1">
@@ -225,7 +250,7 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
                                     )}
                                     <span className="h-1 w-1 rounded-full bg-slate-700" />
                                     <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
-                                        PDF ASSET
+                                        {doc.filename.toLowerCase().endsWith('.pdf') ? 'PDF ASSET' : 'WORD ASSET'}
                                     </span>
                                 </div>
                             </div>
@@ -269,6 +294,23 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
                     </div>
                 ))}
             </div>
+
+            {/* Template Wizard Modal Overlay */}
+            {wizardFilename && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="w-full max-w-2xl transform transition-all">
+                        <TemplateWizard
+                            filename={wizardFilename}
+                            onComplete={(id, name) => {
+                                setWizardFilename(null);
+                                fetchDocuments();
+                                onSelect?.(id, name);
+                            }}
+                            onCancel={() => setWizardFilename(null)}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -8,6 +8,7 @@ import os
 import shutil
 from dotenv import load_dotenv
 from services.pdf_service import PDFService
+from services.doc_service import DocService
 from services.audio_service import AudioService
 from services.llm_service import LLMService
 from supabase import create_client, Client
@@ -26,6 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 pdf_service = PDFService()
+doc_service = DocService()
 audio_service = AudioService()
 llm_service = LLMService()
 
@@ -70,18 +72,22 @@ def health_check():
 
 @app.get("/download/{filename}")
 async def download_file(filename: str):
-    """Serve PDF files for download or viewing"""
+    """Serve PDF or DOCX files for download or viewing"""
     file_path = os.path.join(UPLOAD_DIR, filename)
     
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
     
-    if not filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files can be downloaded")
+    if filename.endswith(".pdf"):
+        media_type = "application/pdf"
+    elif filename.endswith(".docx"):
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported file type for download")
     
     return FileResponse(
         path=file_path,
-        media_type="application/pdf",
+        media_type=media_type,
         filename=filename,
         headers={
             "Content-Disposition": f'inline; filename="{filename}"'
@@ -108,18 +114,30 @@ async def list_documents(client: Client = Depends(get_authenticated_client)):
         print(f"Error listing documents: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/upload-pdf")
-async def upload_pdf(file: UploadFile = File(...), client: Client = Depends(get_authenticated_client), user_id: str = Depends(get_user_id)):
+@app.post("/upload-document")
+async def upload_document(file: UploadFile = File(...), client: Client = Depends(get_authenticated_client), user_id: str = Depends(get_user_id)):
     try:
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # Extract fields using PyMuPDF (fitz)
-        fields = pdf_service.extract_fields(file_path)
-        
+        # Extract fields based on file type
+        file_ext = file.filename.lower()
+        if file_ext.endswith(".pdf"):
+            fields = pdf_service.extract_fields(file_path)
+        elif file_ext.endswith(".docx"):
+            fields = doc_service.extract_fields(file_path)
+        elif file_ext.endswith(".doc"):
+            # We can't process legacy .doc, so we return empty and let user know later
+            # Or we could raise a specific error here. Let's raise an informative error.
+            raise HTTPException(
+                status_code=400, 
+                detail="Legacy .doc format detected. Please save as .docx to use AI Template features."
+            )
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format. Please use PDF or DOCX.")
+            
         # Store in Supabase with user_id
-        # 1. Create document record
         doc_res = client.table("documents").insert({
             "original_name": file.filename,
             "file_path": file_path,
@@ -127,12 +145,11 @@ async def upload_pdf(file: UploadFile = File(...), client: Client = Depends(get_
         }).execute()
         
         if not doc_res.data:
-            print(f"Supabase Error: {doc_res}")
             raise Exception("Failed to create document record in Supabase")
             
         document_id = doc_res.data[0]["id"]
         
-        # 2. Store form fields
+        # Store form fields
         field_records = []
         for field in fields:
             field_records.append({
@@ -140,8 +157,8 @@ async def upload_pdf(file: UploadFile = File(...), client: Client = Depends(get_
                 "field_name": field["name"],
                 "field_label": field["label"],
                 "field_type": field["type"],
-                "page_number": field["page"],
-                "coordinates": field["coordinates"]
+                "page_number": field.get("page", 1),
+                "coordinates": field.get("coordinates")
             })
             
         if field_records:
@@ -151,10 +168,10 @@ async def upload_pdf(file: UploadFile = File(...), client: Client = Depends(get_
             "document_id": document_id,
             "filename": file.filename, 
             "fields_count": len(fields),
-            "message": "PDF uploaded and fields extracted successfully"
+            "message": "Document uploaded and fields extracted successfully"
         }
     except Exception as e:
-        print(f"Error in upload_pdf: {str(e)}")
+        print(f"Error in upload_document: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/documents/{document_id}")
@@ -238,15 +255,16 @@ async def generate_form_data(request: dict, client: Client = Depends(get_authent
         print(f"Error in generate_form_data: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/fill-pdf")
-async def fill_pdf(request: dict, client: Client = Depends(get_authenticated_client), user_id: str = Depends(get_user_id)):
-    # Expects { "filename": "...", "data": { "Field1": "Value1" } }
+@app.post("/fill-document")
+async def fill_document(request: dict, client: Client = Depends(get_authenticated_client), user_id: str = Depends(get_user_id)):
     try:
         filename = request.get("filename")
         form_data = request.get("data", {})
         
         if not filename or not form_data:
             raise HTTPException(status_code=400, detail="Missing filename or data")
+        if not filename.endswith((".pdf", ".docx")):
+            raise HTTPException(status_code=400, detail="Unsupported file format")
 
         input_path = os.path.join(UPLOAD_DIR, filename)
         if not os.path.exists(input_path):
@@ -255,28 +273,99 @@ async def fill_pdf(request: dict, client: Client = Depends(get_authenticated_cli
         output_filename = f"filled_{filename}"
         output_path = os.path.join(UPLOAD_DIR, output_filename)
 
-        success = pdf_service.fill_pdf(input_path, form_data, output_path)
+        if filename.endswith(".pdf"):
+            success = pdf_service.fill_pdf(input_path, form_data, output_path)
+        else:
+            success = doc_service.fill_docx(input_path, form_data, output_path)
         
         if success:
-            # Create a document record for the filled PDF
-            try:
-                client.table("documents").insert({
-                    "original_name": output_filename,
-                    "file_path": output_path,
-                    "user_id": user_id
-                }).execute()
-            except Exception as e:
-                print(f"Warning: Failed to save filled document record to DB: {e}")
-                # We don't fail the request, but it won't show in the list
-                
-            return {"message": "PDF filled successfully", "filled_filename": output_filename}
+            client.table("documents").insert({
+                "original_name": output_filename,
+                "file_path": output_path,
+                "user_id": user_id
+            }).execute()
+            return {"message": "Document filled successfully", "filled_filename": output_filename}
         else:
-             raise HTTPException(status_code=500, detail="Failed to fill PDF")
-
-    except HTTPException as he:
-        raise he
+             raise HTTPException(status_code=500, detail="Failed to fill document")
     except Exception as e:
+         print(f"Error in fill_document: {str(e)}")
          raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/analyze-document")
+async def analyze_document(request: dict, client: Client = Depends(get_authenticated_client)):
+    try:
+        filename = request.get("filename")
+        if not filename:
+            raise HTTPException(status_code=400, detail="Missing filename")
+        
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        suggestions = doc_service.analyze_document(file_path)
+        return {"suggestions": suggestions}
+    except Exception as e:
+        print(f"Error in analyze_document: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/transform-template")
+async def transform_template(request: dict, client: Client = Depends(get_authenticated_client), user_id: str = Depends(get_user_id)):
+    try:
+        filename = request.get("filename")
+        replacements = request.get("replacements", []) # List[{"original_text": "...", "tag_name": "..."}]
+        
+        if not filename or not replacements:
+            raise HTTPException(status_code=400, detail="Missing filename or replacements")
+            
+        input_path = os.path.join(UPLOAD_DIR, filename)
+        if not os.path.exists(input_path):
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        # Create a new template file
+        new_filename = f"template_{filename}"
+        output_path = os.path.join(UPLOAD_DIR, new_filename)
+        
+        success = doc_service.transform_template(input_path, output_path, replacements)
+        
+        if success:
+            # Store the new template in Supabase
+            doc_res = client.table("documents").insert({
+                "original_name": new_filename,
+                "file_path": output_path,
+                "user_id": user_id
+            }).execute()
+            
+            if not doc_res.data:
+                 raise Exception("Failed to create template record in Supabase")
+                 
+            document_id = doc_res.data[0]["id"]
+            
+            # Extract and store fields from the newly created template
+            fields = doc_service.extract_fields(output_path)
+            field_records = []
+            for field in fields:
+                field_records.append({
+                    "document_id": document_id,
+                    "field_name": field["name"],
+                    "field_label": field["label"],
+                    "field_type": field["type"],
+                    "page_number": field.get("page", 1)
+                })
+                
+            if field_records:
+                client.table("form_fields").insert(field_records).execute()
+                
+            return {
+                "message": "Template transformed and saved successfully",
+                "document_id": document_id,
+                "filename": new_filename
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to transform template")
+    except Exception as e:
+        print(f"Error in transform_template: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
