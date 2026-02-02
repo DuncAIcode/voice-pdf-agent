@@ -192,6 +192,8 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
                             </button>
                         </div>
                     )}
-                </div>
-            );
+                </>
+            )}
+        </div>
+    );
 }

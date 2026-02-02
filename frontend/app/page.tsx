@@ -17,32 +17,33 @@ export default function Home() {
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [activeFilename, setActiveFilename] = useState<string | null>(null);
   const [successFile, setSuccessFile] = useState<string | null>(null);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [isChecking, setIsChecking] = useState(true);
+  const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        router.push("/login");
+        router.push('/login');
       } else {
-        setIsAuthChecking(false);
+        setUser(session.user);
+        setIsChecking(false);
       }
-    };
-    checkUser();
+    });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        router.push('/update-password');
-      } else if (event === 'SIGNED_OUT' || !session) {
-        router.push('/login')
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.push('/login');
+      } else {
+        setUser(session.user);
+        setIsChecking(false);
       }
-    })
-    return () => subscription.unsubscribe()
+    });
+
+    return () => subscription.unsubscribe();
   }, [router]);
-
-  if (isAuthChecking) {
+  if (isChecking) {
     return <div className="h-full flex items-center justify-center bg-background"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div></div>;
   }
 
@@ -111,30 +112,45 @@ export default function Home() {
                 <p className="text-blue-400 text-sm font-bold tracking-wide uppercase">{activeFilename}</p>
               </div>
             ) : (
-              <div className="w-full max-w-lg mx-auto grid grid-cols-3 gap-3 mt-12 px-2">
-                <div className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border-white/5 bg-white/[0.02] group hover:bg-white/[0.04] transition-all duration-300">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 10v6m-3-3h6m-3-10a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2Z" /></svg>
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Step 1</span>
-                  <span className="text-xs font-bold text-slate-200">Vault & Upload</span>
-                </div>
+              <div className="w-full max-w-lg mx-auto grid grid-cols-3 gap-3 mt-12 px-2 items-start">
+                {[1, 2, 3].map((step) => (
+                  <div
+                    key={step}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setExpandedStep(expandedStep === step ? null : step)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setExpandedStep(expandedStep === step ? null : step);
+                      }
+                    }}
+                    className={`glass-panel p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border-white/5 bg-white/[0.02] group hover:bg-white/[0.04] transition-all duration-300 relative overflow-hidden text-center cursor-pointer ${expandedStep === step ? 'scale-[1.02] bg-white/[0.06] border-white/10 ring-1 ring-white/10' : ''
+                      }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 ${expandedStep === step ? 'scale-110 mb-1' : 'group-hover:scale-110'
+                      } ${step === 1 ? 'bg-blue-500/10 text-blue-400' :
+                        step === 2 ? 'bg-purple-500/10 text-purple-400' :
+                          'bg-yellow-500/10 text-yellow-500'
+                      }`}>
+                      {step === 1 && <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 10v6m-3-3h6m-3-10a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2Z" /></svg>}
+                      {step === 2 && <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /></svg>}
+                      {step === 3 && <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14l-2 2-2-2M12 11V3m0 18v-5" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M21 5c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M21 19c0 1.66-4 3-9 3s-9-1.34-9-3" /></svg>}
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Step {step}</span>
+                    <span className="text-xs font-bold text-slate-200">
+                      {step === 1 ? 'Vault & Upload' : step === 2 ? 'Record Narrative' : 'AI Magic'}
+                    </span>
 
-                <div className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border-white/5 bg-white/[0.02] group hover:bg-white/[0.04] transition-all duration-300">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /></svg>
+                    <div className={`overflow-hidden transition-all duration-500 ease-in-out ${expandedStep === step ? 'max-h-40 opacity-100 mt-3 border-t border-white/5 pt-3' : 'max-h-0 opacity-0'
+                      }`}>
+                      <p className="text-[10px] font-medium leading-relaxed text-slate-400 px-1">
+                        {step === 1 && "Select a Word or PDF template. Our AI parses placeholders automatically to prepare for your voice data."}
+                        {step === 2 && "Tap the pulse and speak naturally. Dictate the document details in any order—our AI understands context."}
+                        {step === 3 && "View the synthesized mapping, make optional edits, and export your professional document in one click."}
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Step 2</span>
-                  <span className="text-xs font-bold text-slate-200">Record Narrative</span>
-                </div>
-
-                <div className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 border-white/5 bg-white/[0.02] group hover:bg-white/[0.04] transition-all duration-300">
-                  <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14l-2 2-2-2M12 11V3m0 18v-5" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M21 5c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M21 19c0 1.66-4 3-9 3s-9-1.34-9-3" /></svg>
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Step 3</span>
-                  <span className="text-xs font-bold text-slate-200">AI Magic</span>
-                </div>
+                ))}
               </div>
             )}
           </div>

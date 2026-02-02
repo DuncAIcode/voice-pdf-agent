@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <body className={`${inter.className} h-full antialiased bg-background text-foreground`}>
         <div className="mx-auto flex h-full max-w-md flex-col overflow-hidden relative">
           <main className="flex-1 overflow-y-auto pb-20">
