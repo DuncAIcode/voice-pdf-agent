@@ -23,10 +23,12 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
         initVault();
 
         // Subscribe to real-time updates from other components/tabs
-        audioStorage.onUpdate(() => {
+        const unsubscribe = audioStorage.onUpdate(() => {
             console.log("Vault update detected, refreshing list...");
             loadBackups();
         });
+
+        return () => unsubscribe();
     }, []);
 
     const loadBackups = async () => {

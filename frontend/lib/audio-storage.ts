@@ -20,10 +20,16 @@ export interface AudioBackup {
 class AudioStorage {
     private db: IDBDatabase | null = null;
     private channel: BroadcastChannel | null = null;
+    private events = new EventTarget();
 
     constructor() {
         if (typeof window !== "undefined") {
             this.channel = new BroadcastChannel("audio-vault-updates");
+            this.channel.onmessage = (event) => {
+                if (event.data.type === "SYNC_COMPLETE") {
+                    this.events.dispatchEvent(new CustomEvent("update"));
+                }
+            };
         }
     }
 
@@ -66,8 +72,10 @@ class AudioStorage {
             const request = store.put(backup);
 
             request.onsuccess = () => {
-                // Notify other components/tabs
+                // Notify other tabs
                 this.channel?.postMessage({ type: "SYNC_COMPLETE", id });
+                // Notify this tab immediately
+                this.events.dispatchEvent(new CustomEvent("update"));
                 resolve(id);
             };
             request.onerror = () => reject(request.error);
@@ -75,13 +83,9 @@ class AudioStorage {
     }
 
     onUpdate(callback: () => void) {
-        if (this.channel) {
-            this.channel.onmessage = (event) => {
-                if (event.data.type === "SYNC_COMPLETE") {
-                    callback();
-                }
-            };
-        }
+        const handler = () => callback();
+        this.events.addEventListener("update", handler);
+        return () => this.events.removeEventListener("update", handler);
     }
 
     async getAllBackups(): Promise<AudioBackup[]> {
