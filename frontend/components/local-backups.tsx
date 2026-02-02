@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { audioStorage, AudioBackup } from "../lib/audio-storage";
 import { api } from "../lib/api";
 
@@ -12,6 +12,8 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
     const [backups, setBackups] = useState<AudioBackup[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isRetrying, setIsRetrying] = useState<string | null>(null);
+    const [playingId, setPlayingId] = useState<string | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
         const initVault = async () => {
@@ -36,7 +38,11 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm("Permanently delete this local backup?")) {
+        if (confirm("Permanently delete this local recording?")) {
+            if (playingId === id) {
+                audioRef.current?.pause();
+                setPlayingId(null);
+            }
             await audioStorage.deleteRecording(id);
             await loadBackups();
         }
@@ -49,8 +55,6 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
             if (onRetrySuccess) {
                 onRetrySuccess(result);
             }
-            // If successful, we can optionally delete the backup or mark as synced
-            // For now, let's just alert success
             alert("Transcription recovery successful!");
             setIsOpen(false);
         } catch (error) {
@@ -61,10 +65,32 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
         }
     };
 
+    const togglePlay = (backup: AudioBackup) => {
+        if (playingId === backup.id) {
+            audioRef.current?.pause();
+            setPlayingId(null);
+        } else {
+            if (audioRef.current) {
+                const url = URL.createObjectURL(backup.blob);
+                audioRef.current.src = url;
+                audioRef.current.play();
+                setPlayingId(backup.id);
+
+                // Cleanup URL when done or changed
+                audioRef.current.onended = () => {
+                    setPlayingId(null);
+                    URL.revokeObjectURL(url);
+                };
+            }
+        }
+    };
+
     if (backups.length === 0) return null;
 
     return (
         <div className="w-full max-w-lg mt-8 mb-4">
+            <audio ref={audioRef} className="hidden" />
+
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center space-x-2 text-xs font-black uppercase tracking-[0.2em] text-blue-400/80 hover:text-blue-400 transition-colors py-2 px-4 glass-card border-blue-500/10 group"
@@ -73,7 +99,7 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                 </span>
-                <span>Safety Vault: {backups.length} Local {backups.length === 1 ? 'Backup' : 'Backups'}</span>
+                <span>Saved Recordings: {backups.length} Local {backups.length === 1 ? 'Backup' : 'Backups'}</span>
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="12"
@@ -102,6 +128,19 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
                             </div>
 
                             <div className="flex items-center space-x-2">
+                                {/* Play Button */}
+                                <button
+                                    onClick={() => togglePlay(backup)}
+                                    className={`p-2 rounded-lg transition-all ${playingId === backup.id ? 'bg-blue-500 text-white animate-pulse' : 'bg-white/5 text-slate-300 hover:text-white hover:bg-white/10'}`}
+                                    title={playingId === backup.id ? "Pause" : "Play Local Recording"}
+                                >
+                                    {playingId === backup.id ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+                                    ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                                    )}
+                                </button>
+
                                 <button
                                     onClick={() => handleRetry(backup)}
                                     disabled={isRetrying !== null}
@@ -122,7 +161,7 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
                                 <button
                                     onClick={() => handleDelete(backup.id)}
                                     className="p-2 rounded-lg bg-red-500/5 text-slate-500 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
-                                    title="Delete Backup"
+                                    title="Delete Recording"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
                                 </button>
@@ -132,7 +171,7 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
 
                     <button
                         onClick={async () => {
-                            if (confirm("Clear all local backups?")) {
+                            if (confirm("Clear all local recordings?")) {
                                 for (const b of backups) {
                                     await audioStorage.deleteRecording(b.id);
                                 }
@@ -141,7 +180,7 @@ export function LocalBackups({ onRetrySuccess }: LocalBackupsProps) {
                         }}
                         className="w-full py-2 text-[10px] font-bold text-slate-600 hover:text-red-400 transition-colors uppercase tracking-widest"
                     >
-                        Clear All Vault Data
+                        Clear All Recorded Data
                     </button>
                 </div>
             )}

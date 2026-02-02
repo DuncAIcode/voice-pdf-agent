@@ -21,8 +21,8 @@ A neural document synthesis platform that transforms voice transcriptions into s
 
 ### 2. Voice Transcription Protocol
 - **Record View**: Premium orbital animation UI with real-time feedback.
-- **Safety Vault (NEW)**: Automatic local mirroring of every recording to **IndexedDB** on the device. Prevents data loss during API failures or session timeouts.
-- **Recovery UI**: Allows users to download raw `.wav` files or retry transcriptions from local storage.
+- **Saved Recordings (NEW)**: Automatic local mirroring of every recording to **IndexedDB** on the device. Prevents data loss during API failures or session timeouts.
+- **Recovery UI**: Allows users to play back recordings instantly, download raw `.wav` files, or retry transcriptions from local storage.
 
 ### 3. AI Template Wizard (Word docs)
 - **Structure Analysis**: Extracts fields from paragraphs and **tables** (recently enhanced).
@@ -43,6 +43,7 @@ A neural document synthesis platform that transforms voice transcriptions into s
 - **Visual Clarity**: 
     - Removed confusing "Checkmark" icons from un-processed Word docs in the vault.
     - Updated success modals to correctly label assets as "Word Doc" or "PDF" dynamically.
+- **Phase 15 (Saved Recordings)**: Implemented `audio-storage.ts` and `LocalBackups.tsx` to ensure 100% data safety via persistent device-side storage, complete with in-page playback.
 - **Mobile Share Fix**: Corrected Mime types for Word documents when shared via the `navigator.share` API.
 
 ---
