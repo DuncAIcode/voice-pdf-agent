@@ -148,7 +148,7 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
         }
 
         return (
-            <div className="w-full py-16 glass-card border-dashed border-white/10 flex flex-col items-center justify-center text-slate-400 gap-6 relative overflow-hidden group hover:bg-white/[0.02] transition-all cursor-pointer">
+            <div id="vault-upload" className="w-full py-16 glass-card border-dashed border-white/10 flex flex-col items-center justify-center text-slate-400 gap-6 relative overflow-hidden group hover:bg-white/[0.02] transition-all cursor-pointer">
                 <input
                     type="file"
                     accept=".pdf,.docx,.doc,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -194,9 +194,10 @@ export function DocumentList({ onSelect, activeDocumentId, isActive = false, fil
                 </label>
             )}
             <div className="w-full space-y-4">
-                {filteredDocuments.map((doc) => (
+                {filteredDocuments.map((doc, index) => (
                     <div
                         key={doc.id}
+                        id={index === 0 ? "tour-vault-doc-0" : undefined}
                         className={`group relative overflow-hidden glass-card p-5 border transition-all duration-300 ${doc.is_filled
                             ? 'border-green-500/20 hover:border-green-500/40 bg-green-500/5'
                             : 'border-white/5 hover:border-white/20 hover:bg-white/5 shadow-lg'

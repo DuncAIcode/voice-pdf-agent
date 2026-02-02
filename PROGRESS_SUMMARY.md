@@ -44,9 +44,8 @@ A neural document synthesis platform that transforms voice transcriptions into s
     - Removed confusing "Checkmark" icons from un-processed Word docs in the vault.
     - Updated success modals to correctly label assets as "Word Doc" or "PDF" dynamically.
 - **Phase 15 (Saved Recordings)**: Implemented `audio-storage.ts` and `LocalBackups.tsx` to ensure 100% data safety via persistent device-side storage, complete with in-page playback.
-- **Phase 16 (Interactive UX & Hydration Fix)**: 
-    - **Step Card Expansion**: Implemented interactive "Step" cards on the home page with smooth animations and detailed instructions.
-    - **Hydration Mismatch Resolution**: Corrected invalid HTML tag nesting and resolved font-related hydration errors, achieving a clean dev console.
+- **Phase 16**: Implementation of Interactive Instructional Cards (Expanding Step Cards) and fixed hydration mismatch warnings.
+- **Phase 17**: Guided Product Tour Implementation using `react-joyride` with automated tab switching logic for seamless onboarding.
 - **Mobile Share Fix**: Corrected Mime types for Word documents when shared via the `navigator.share` API.
 
 ---

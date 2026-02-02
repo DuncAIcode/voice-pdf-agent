@@ -10,6 +10,7 @@ export function NavBar({ activeTab, setActiveTab }: NavBarProps) {
         <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-50">
             <div className="glass-panel p-2 rounded-full flex items-center justify-between shadow-2xl border-white/5 bg-slate-900/40 backdrop-blur-2xl">
                 <button
+                    id="nav-record"
                     onClick={() => setActiveTab("record")}
                     className={`flex-1 flex flex-col items-center justify-center py-3 rounded-full transition-all duration-300 ${activeTab === "record"
                         ? "bg-blue-600/20 text-blue-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
@@ -25,6 +26,7 @@ export function NavBar({ activeTab, setActiveTab }: NavBarProps) {
                 </button>
 
                 <button
+                    id="nav-vault"
                     onClick={() => setActiveTab("documents")}
                     className={`flex-1 flex flex-col items-center justify-center py-3 rounded-full transition-all duration-300 ${activeTab === "documents"
                         ? "bg-blue-600/20 text-blue-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
@@ -41,6 +43,7 @@ export function NavBar({ activeTab, setActiveTab }: NavBarProps) {
                 </button>
 
                 <button
+                    id="nav-logs"
                     onClick={() => setActiveTab("completed")}
                     className={`flex-1 flex flex-col items-center justify-center py-3 rounded-full transition-all duration-300 ${activeTab === "completed"
                         ? "bg-blue-600/20 text-blue-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"

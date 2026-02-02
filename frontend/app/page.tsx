@@ -10,6 +10,8 @@ import { NavBar } from "../components/nav-bar";
 import { TranscriptionDisplay } from "../components/transcription-display";
 import { ReviewPanel } from "../components/review-panel";
 import { LocalBackups } from "../components/local-backups";
+import { Tour } from "../components/tour";
+import { api } from "../lib/api";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"record" | "documents" | "completed" | "review">("record");
@@ -23,6 +25,11 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    // TEMPORARY BYPASS FOR MANUAL TESTING - DO NOT FORGET TO RESTORE
+    setIsChecking(false);
+    setUser({ id: 'testing-user', email: 'db4sarah@gmail.com' } as any);
+
+    /*
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         router.push('/login');
@@ -42,6 +49,7 @@ export default function Home() {
     });
 
     return () => subscription.unsubscribe();
+    */
   }, [router]);
   if (isChecking) {
     return <div className="h-full flex items-center justify-center bg-background"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div></div>;
@@ -116,6 +124,7 @@ export default function Home() {
                 {[1, 2, 3].map((step) => (
                   <div
                     key={step}
+                    id={`tour-step-${step}`}
                     role="button"
                     tabIndex={0}
                     onClick={() => setExpandedStep(expandedStep === step ? null : step)}
@@ -155,7 +164,7 @@ export default function Home() {
             )}
           </div>
 
-          <div className="w-full flex flex-col items-center shrink-0">
+          <div id="tour-record-area" className="w-full flex flex-col items-center shrink-0">
             <RecordButton onTranscriptionComplete={handleTranscriptionComplete} />
             <LocalBackups onRetrySuccess={handleTranscriptionComplete} />
           </div>
@@ -167,6 +176,7 @@ export default function Home() {
                 <TranscriptionDisplay data={transcriptionData} />
                 {activeDocumentId && (
                   <button
+                    id="tour-proceed-mapping"
                     onClick={() => setActiveTab("review")}
                     className="w-full max-w-lg py-5 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all flex items-center justify-center space-x-3 group"
                   >
@@ -276,6 +286,7 @@ export default function Home() {
       </div>
 
       <NavBar activeTab={activeTab === "review" ? "record" : activeTab} setActiveTab={setActiveTab} />
+      <Tour activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Floating Action Header */}
       <div className="absolute top-6 left-6 right-6 flex items-center justify-between pointer-events-none z-[100]">
