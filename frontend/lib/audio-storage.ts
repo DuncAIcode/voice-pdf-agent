@@ -19,6 +19,13 @@ export interface AudioBackup {
 
 class AudioStorage {
     private db: IDBDatabase | null = null;
+    private channel: BroadcastChannel | null = null;
+
+    constructor() {
+        if (typeof window !== "undefined") {
+            this.channel = new BroadcastChannel("audio-vault-updates");
+        }
+    }
 
     async init(): Promise<IDBDatabase> {
         if (this.db) return this.db;
@@ -58,9 +65,23 @@ class AudioStorage {
             const store = transaction.objectStore(STORE_NAME);
             const request = store.put(backup);
 
-            request.onsuccess = () => resolve(id);
+            request.onsuccess = () => {
+                // Notify other components/tabs
+                this.channel?.postMessage({ type: "SYNC_COMPLETE", id });
+                resolve(id);
+            };
             request.onerror = () => reject(request.error);
         });
+    }
+
+    onUpdate(callback: () => void) {
+        if (this.channel) {
+            this.channel.onmessage = (event) => {
+                if (event.data.type === "SYNC_COMPLETE") {
+                    callback();
+                }
+            };
+        }
     }
 
     async getAllBackups(): Promise<AudioBackup[]> {
