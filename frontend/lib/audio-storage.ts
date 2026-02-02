@@ -27,7 +27,7 @@ class AudioStorage {
             this.channel = new BroadcastChannel("audio-vault-updates");
             this.channel.onmessage = (event) => {
                 if (event.data.type === "SYNC_COMPLETE") {
-                    this.events.dispatchEvent(new CustomEvent("update"));
+                    window.dispatchEvent(new CustomEvent("vault-update"));
                 }
             };
         }
@@ -72,10 +72,12 @@ class AudioStorage {
             const request = store.put(backup);
 
             request.onsuccess = () => {
-                // Notify other tabs
-                this.channel?.postMessage({ type: "SYNC_COMPLETE", id });
-                // Notify this tab immediately
-                this.events.dispatchEvent(new CustomEvent("update"));
+                // Notify this tab immediately via standard window event
+                if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("vault-update"));
+                    // Also notify other tabs/windows
+                    this.channel?.postMessage({ type: "SYNC_COMPLETE", id });
+                }
                 resolve(id);
             };
             request.onerror = () => reject(request.error);
@@ -83,9 +85,15 @@ class AudioStorage {
     }
 
     onUpdate(callback: () => void) {
-        const handler = () => callback();
-        this.events.addEventListener("update", handler);
-        return () => this.events.removeEventListener("update", handler);
+        if (typeof window === "undefined") return () => { };
+
+        const handler = () => {
+            console.log("Vault update event received via window listener");
+            callback();
+        };
+
+        window.addEventListener("vault-update", handler);
+        return () => window.removeEventListener("vault-update", handler);
     }
 
     async getAllBackups(): Promise<AudioBackup[]> {
