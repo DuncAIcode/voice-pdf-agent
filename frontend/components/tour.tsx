@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Joyride, { Step, CallBackProps, STATUS } from "react-joyride";
+import Joyride, { Step, CallBackProps, STATUS, EVENTS, ACTIONS } from "react-joyride";
 
 interface TourProps {
     activeTab: string;
@@ -71,8 +71,8 @@ export function Tour({ activeTab, setActiveTab, onComplete }: TourProps) {
         }
 
         // Tab switching logic based on step index
-        if (type === "step:after" || type === "target:not_found") {
-            const nextIndex = index + (action === "prev" ? -1 : 1);
+        if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
+            const nextIndex = index + (action === ACTIONS.PREV ? -1 : 1);
 
             // Step 2 -> 3 (Switch to Vault)
             if (nextIndex === 2) {
