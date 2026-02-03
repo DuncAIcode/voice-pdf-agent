@@ -27,7 +27,7 @@ export default function Home() {
   useEffect(() => {
     // TEMPORARY BYPASS FOR MANUAL TESTING - DO NOT FORGET TO RESTORE
     setIsChecking(false);
-    setUser({ id: 'testing-user', email: 'db4sarah@gmail.com' } as any);
+    setUser({ id: '6355b5c6-2e37-4f1c-bec0-84681980738b', email: 'db4sarah@gmail.com' } as any);
 
     /*
     supabase.auth.getSession().then(({ data: { session } }) => {

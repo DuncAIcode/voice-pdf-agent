@@ -9,7 +9,7 @@ class LLMService:
         if not api_key:
             print("Warning: GEMINI_API_KEY not found in environment variables.")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-flash-latest')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
 
     async def map_transcription_to_fields(self, transcription_text: str, pdf_fields: List[Dict[str, Any]]) -> Dict[str, Any]:
         """

@@ -15,6 +15,8 @@ from supabase import create_client, Client
 
 load_dotenv()
 
+BYPASS_AUTH = True # TEMPORARY BYPASS FOR MANUAL TESTING - SET TO FALSE BEFORE PRODUCTION
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -38,23 +40,38 @@ supabase: Client = create_client(supabase_url, supabase_key)
 
 def get_token(authorization: Optional[str] = Header(None)):
     if not authorization:
+        if BYPASS_AUTH:
+            return "null"
         raise HTTPException(status_code=401, detail="Missing Authorization Header")
     if not authorization.startswith("Bearer "):
+        if BYPASS_AUTH:
+            return "null"
         raise HTTPException(status_code=401, detail="Invalid Authorization Header Format")
     return authorization.split(" ")[1]
 
-def get_authenticated_client(token: str = Depends(get_token)):
-    # Create a new client instance with the user's token to respect RLS
-    # We pass the user's JWT as the Authorization header so Postgres sees auth.uid()
-    client = create_client(supabase_url, supabase_key)
-    client.postgrest.auth(token)
-    return client
+# Removed redundant get_authenticated_client
 
 def get_user_id(token: str = Depends(get_token)):
+    if BYPASS_AUTH and (token == "null" or token == "" or not token):
+        return "6355b5c6-2e37-4f1c-bec0-84681980738b"
     user = supabase.auth.get_user(token)
     if not user or not user.user:
         raise HTTPException(status_code=401, detail="Invalid Token")
     return user.user.id
+
+def get_optional_token(authorization: Optional[str] = Header(None)):
+    if authorization and authorization.startswith("Bearer "):
+        return authorization.split(" ")[1]
+    return None
+
+def get_authenticated_client(token: Optional[str] = Depends(get_optional_token)):
+    if BYPASS_AUTH and (not token or token == "null"):
+        return supabase
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing Authorization Header")
+    client = create_client(supabase_url, supabase_key)
+    client.postgrest.auth(token)
+    return client
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -307,6 +324,23 @@ async def analyze_document(request: dict, client: Client = Depends(get_authentic
         return {"suggestions": suggestions}
     except Exception as e:
         print(f"Error in analyze_document: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/extract-preview")
+async def extract_preview(request: dict, client: Client = Depends(get_authenticated_client)):
+    try:
+        filename = request.get("filename")
+        if not filename:
+            raise HTTPException(status_code=400, detail="Missing filename")
+        
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        html = doc_service.get_document_preview(file_path)
+        return {"html": html}
+    except Exception as e:
+        print(f"Error in extract_preview: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/transform-template")

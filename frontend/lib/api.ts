@@ -154,4 +154,22 @@ export const api = {
 
         return response.json();
     },
+    extractPreview: async (filename: string) => {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        const response = await fetch(`${API_BASE_URL}/extract-preview`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session?.access_token || ""}`,
+            },
+            body: JSON.stringify({ filename }),
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to extract document preview");
+        }
+
+        return response.json();
+    },
 };

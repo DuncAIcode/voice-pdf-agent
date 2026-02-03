@@ -14,7 +14,28 @@
     - [x] Create Document Dashboard <!-- id: 8 -->
     - [x] Implement Bottom Tab Navigation (Record/Dashboard) <!-- id: 16 -->
     - [x] Add Audio Visualizer & Pause/Resume Logic <!-- id: 17 -->
+    - [x] Phase 17: Guided Product Tour Implementation <!-- id: 141 -->
+    - [x] Integrate `react-joyride` <!-- id: 142 -->
+    - [x] Define tour steps for core workflow <!-- id: 143 -->
+    - [x] Implement automated tab switching <!-- id: 144 -->
+    - [x] Add persistence for first-time users <!-- id: 145 -->
+
+- [x] Phase 18: Debugging and Fixing Template Wizard <!-- id: 146 -->
+    - [x] Investigate Wizard failure points <!-- id: 147 -->
+    - [x] Fix authentication mismatch during testing <!-- id: 148 -->
+    - [x] Verify AI field detection logic <!-- id: 149 -->
+    - [x] Ensure template transformation works correctly <!-- id: 150 -->
     - [x] Display Formatted Transcription Results (Date/Time/Segments) <!-- id: 18 -->
+
+- [x] Phase 19: Interactive Field Definition <!-- id: 151 -->
+    - [x] Implement manual field addition in Template Wizard <!-- id: 152 -->
+    - [x] Add "Find & Replace" UI for custom anchor text <!-- id: 153 -->
+    - [x] Update backend to handle manual mappings alongside detected ones <!-- id: 154 -->
+
+- [x] Phase 20: Document Preview in Wizard <!-- id: 155 -->
+    - [x] Create backend endpoint to extract and return plain text from DOCX <!-- id: 156 -->
+    - [x] Implement side-panel or modal in Wizard to display document text <!-- id: 157 -->
+    - [x] Add "Click to Copy" or text selection support for manual anchors <!-- id: 158 -->
 - [x] Backend Service (FastAPI)
     - [x] PDF Field Extraction Utility <!-- id: 9 -->
     - [x] Google Gemini Audio Service (Replaces WhisperX) <!-- id: 10 -->

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Suggestion {
     original_text: string;
     suggested_tag: string;
     reason: string;
     selected: boolean;
+    is_manual?: boolean;
 }
 
 interface TemplateWizardProps {
@@ -31,6 +33,12 @@ export function TemplateWizard({ filename, onComplete, onCancel }: TemplateWizar
     const [isTransforming, setIsTransforming] = useState(false);
     const [progress, setProgress] = useState(0);
     const [statusIndex, setStatusIndex] = useState(0);
+
+    // Preview State
+    const [previewHtml, setPreviewHtml] = useState<string>("");
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+    const previewRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (loading) {
@@ -60,8 +68,18 @@ export function TemplateWizard({ filename, onComplete, onCancel }: TemplateWizar
             }
         }
 
+        async function fetchPreview() {
+            try {
+                const result = await api.extractPreview(filename);
+                setPreviewHtml(result.html);
+            } catch (error) {
+                console.error("Failed to fetch document preview:", error);
+            }
+        }
+
         if (filename) {
             fetchAnalysis();
+            fetchPreview();
         }
     }, [filename]);
 
@@ -73,16 +91,48 @@ export function TemplateWizard({ filename, onComplete, onCancel }: TemplateWizar
         setSuggestions(prev => prev.map((s, i) => i === index ? { ...s, suggested_tag: newTag } : s));
     };
 
+    const handleOriginalTextChange = (index: number, newText: string) => {
+        setSuggestions(prev => prev.map((s, i) => i === index ? { ...s, original_text: newText } : s));
+    };
+
+    const handleAddField = () => {
+        const newIndex = suggestions.length;
+        setSuggestions(prev => [
+            ...prev,
+            {
+                original_text: "",
+                suggested_tag: "new_field",
+                reason: "Manually added field",
+                selected: true,
+                is_manual: true
+            }
+        ]);
+        setFocusedIndex(newIndex);
+    };
+
+    const setFromSelection = () => {
+        const selection = window.getSelection();
+        if (selection && selection.toString() && focusedIndex !== null) {
+            handleOriginalTextChange(focusedIndex, selection.toString().trim());
+        }
+    };
+
     const handleSave = async () => {
         const selectedReplacements = suggestions
             .filter(s => s.selected)
             .map(s => ({
-                original_text: s.original_text,
-                tag_name: s.suggested_tag
+                original_text: s.original_text.trim(),
+                tag_name: s.suggested_tag.trim()
             }));
 
+        const invalidFields = selectedReplacements.filter(r => !r.original_text || !r.tag_name);
+        if (invalidFields.length > 0) {
+            alert("All selected fields must have both anchor text and a tag name.");
+            return;
+        }
+
         if (selectedReplacements.length === 0) {
-            alert("Please select at least one field to transform.");
+            alert("Please select or add at least one field to transform.");
             return;
         }
 
@@ -186,85 +236,173 @@ export function TemplateWizard({ filename, onComplete, onCancel }: TemplateWizar
                 </button>
             </div>
 
-            {/* Scroll Area */}
-            <div className="flex-1 overflow-y-auto max-h-[60vh] p-8 space-y-6 custom-scrollbar">
-                {suggestions.length > 0 ? (
-                    <>
-                        <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 text-[11px] text-indigo-300 font-medium leading-relaxed">
-                            <span className="font-black mr-2">WIZARD LOG:</span>
-                            Found {suggestions.length} potential smart fields. Select the ones you want to convert into template tags.
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4">
-                            {suggestions.map((s, index) => (
-                                <div
-                                    key={index}
-                                    className={`group p-5 rounded-2xl border transition-all duration-300 ${s.selected
-                                        ? 'bg-indigo-500/5 border-indigo-500/20'
-                                        : 'bg-slate-900/40 border-white/5 opacity-60'
-                                        }`}
+            <div className="flex flex-1 overflow-hidden relative">
+                {/* Document Preview Side Panel */}
+                <AnimatePresence>
+                    {isPreviewOpen && (
+                        <motion.div
+                            initial={{ x: "-100%", opacity: 0 }}
+                            animate={{ x: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 20 } }}
+                            exit={{ x: "-100%", opacity: 0 }}
+                            className="absolute left-0 top-0 bottom-0 w-[450px] z-50 glass-panel border-r border-white/10 bg-slate-950/90 backdrop-blur-3xl shadow-[50px_0_100px_rgba(0,0,0,0.5)] flex flex-col"
+                        >
+                            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-indigo-500/10">
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-tighter">Document Preview</h3>
+                                    <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Select text to use as anchor</p>
+                                </div>
+                                <button
+                                    onClick={() => setIsPreviewOpen(false)}
+                                    className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
                                 >
-                                    <div className="flex items-start gap-4">
-                                        <button
-                                            onClick={() => handleToggle(index)}
-                                            className={`mt-1 h-6 w-6 rounded-lg flex items-center justify-center transition-all ${s.selected ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800 text-slate-600 border border-white/5'
-                                                }`}
-                                        >
-                                            {s.selected && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                                        </button>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                                </button>
+                            </div>
 
-                                        <div className="flex-1 space-y-3">
-                                            <div className="flex justify-between items-start">
-                                                <div className="space-y-1">
-                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Original Text</p>
-                                                    <p className="text-sm font-bold text-slate-200">"{s.original_text}"</p>
-                                                </div>
-                                                <div className="px-2 py-1 bg-white/5 rounded text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
-                                                    Detected Placeholder
-                                                </div>
+                            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
+                                <div
+                                    ref={previewRef}
+                                    className="prose prose-invert prose-sm max-w-none doc-preview-content"
+                                    dangerouslySetInnerHTML={{ __html: previewHtml }}
+                                    onMouseUp={setFromSelection}
+                                />
+
+                                {focusedIndex !== null && (
+                                    <div className="sticky bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-950 to-transparent">
+                                        <div className="bg-indigo-600 rounded-xl p-3 shadow-2xl animate-bounce-subtle border border-indigo-400/50 flex items-center justify-between">
+                                            <p className="text-[10px] font-bold text-white uppercase tracking-widest">Select text to auto-fill anchor</p>
+                                            <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="indigo" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                             </div>
-
-                                            {s.selected && (
-                                                <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                                                    <p className="text-[10px] font-black text-indigo-400/80 uppercase tracking-widest">Converted Tag Name</p>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-indigo-400 font-bold">{"{{"}</span>
-                                                        <input
-                                                            type="text"
-                                                            value={s.suggested_tag}
-                                                            onChange={(e) => handleTagChange(index, e.target.value)}
-                                                            className="flex-1 bg-slate-950/50 border border-white/5 rounded-lg px-3 py-2 text-sm font-mono text-indigo-300 focus:border-indigo-500/50 outline-none transition-all"
-                                                        />
-                                                        <span className="text-indigo-400 font-bold">{"}}"}</span>
-                                                    </div>
-                                                    <p className="text-[10px] text-slate-600 italic font-medium">{s.reason}</p>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    </>
-                ) : (
-                    <div className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-6 glass-panel border-white/5 bg-slate-900/40">
-                        <div className="h-16 w-16 rounded-full bg-slate-800/50 border border-white/5 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                        </div>
-                        <div className="space-y-2">
-                            <h3 className="text-white font-black uppercase tracking-tight">No fields detected</h3>
-                            <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-xs mx-auto">
-                                AI couldn't find any clear placeholders like [Text] or underscores in this document.
-                            </p>
-                        </div>
-                        <button
-                            onClick={onCancel}
-                            className="px-6 py-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-full text-[10px] font-black text-white uppercase tracking-widest transition-all"
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Main Content Area */}
+                <div className="flex-1 flex flex-col overflow-hidden relative">
+                    {/* View Document Toggle Button */}
+                    {!isPreviewOpen && (
+                        <motion.button
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setIsPreviewOpen(true)}
+                            className="absolute left-6 top-6 z-40 px-5 py-3 bg-indigo-600/90 backdrop-blur-md text-white rounded-full shadow-2xl shadow-indigo-500/40 border border-indigo-400/30 flex items-center gap-2 group animate-bounce-subtle"
                         >
-                            Back to Documents
-                        </button>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                            <span className="text-[11px] font-black uppercase tracking-widest">View Document</span>
+                        </motion.button>
+                    )}
+
+                    {/* Scroll Area */}
+                    <div className="flex-1 overflow-y-auto max-h-[60vh] p-8 space-y-6 custom-scrollbar">
+                        {suggestions.length > 0 ? (
+                            <>
+                                <div className="flex justify-between items-center bg-indigo-500/5 border border-indigo-500/10 p-4 rounded-xl">
+                                    <div className="text-[11px] text-indigo-300 font-medium leading-relaxed">
+                                        <span className="font-black mr-2">WIZARD LOG:</span>
+                                        Found {suggestions.length} potential smart fields. Select or add fields to convert.
+                                    </div>
+                                    <button
+                                        onClick={handleAddField}
+                                        className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/20 rounded-lg text-[10px] font-black text-indigo-300 uppercase tracking-widest transition-all"
+                                    >
+                                        + Add Field
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4">
+                                    {suggestions.map((s, index) => (
+                                        <div
+                                            key={index}
+                                            className={`group p-5 rounded-2xl border transition-all duration-300 ${s.selected
+                                                ? 'bg-indigo-500/5 border-indigo-500/20'
+                                                : 'bg-slate-900/40 border-white/5 opacity-60'
+                                                }`}
+                                        >
+                                            <div className="flex items-start gap-4">
+                                                <button
+                                                    onClick={() => handleToggle(index)}
+                                                    className={`mt-1 h-6 w-6 rounded-lg flex items-center justify-center transition-all ${s.selected ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800 text-slate-600 border border-white/5'
+                                                        }`}
+                                                >
+                                                    {s.selected && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                                </button>
+
+                                                <div className="flex-1 space-y-3">
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="space-y-1 flex-1">
+                                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Original Text (Anchor)</p>
+                                                            <input
+                                                                type="text"
+                                                                value={s.original_text}
+                                                                onFocus={() => setFocusedIndex(index)}
+                                                                onChange={(e) => handleOriginalTextChange(index, e.target.value)}
+                                                                placeholder="Text to replace..."
+                                                                className={`w-full bg-slate-950/30 border rounded px-2 py-1 text-sm font-bold text-slate-200 outline-none transition-all ${focusedIndex === index ? 'border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.2)] bg-indigo-500/5' : 'border-white/5 focus:border-indigo-500/30'}`}
+                                                            />
+                                                        </div>
+                                                        <div className="ml-4 px-2 py-1 bg-white/5 rounded text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                            {s.is_manual ? 'Manual Entry' : 'Detected'}
+                                                        </div>
+                                                    </div>
+
+                                                    {s.selected && (
+                                                        <div className="space-y-2 animate-in slide-in-from-top-2 duration-300 border-t border-white/5 pt-3">
+                                                            <p className="text-[10px] font-black text-indigo-400/80 uppercase tracking-widest">Converted Tag Name</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-indigo-400 font-bold">{"{{"}</span>
+                                                                <input
+                                                                    type="text"
+                                                                    value={s.suggested_tag}
+                                                                    onChange={(e) => handleTagChange(index, e.target.value)}
+                                                                    className="flex-1 bg-slate-950/50 border border-white/5 rounded-lg px-3 py-2 text-sm font-mono text-indigo-300 focus:border-indigo-500/50 outline-none transition-all"
+                                                                />
+                                                                <span className="text-indigo-400 font-bold">{"}}"}</span>
+                                                            </div>
+                                                            <p className="text-[10px] text-slate-600 italic font-medium">{s.reason}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-6 glass-panel border-white/5 bg-slate-900/40">
+                                <div className="h-16 w-16 rounded-full bg-slate-800/50 border border-white/5 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-white font-black uppercase tracking-tight">No fields detected</h3>
+                                    <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-xs mx-auto">
+                                        AI couldn't find any clear placeholders. You can manually define fields by adding anchors below.
+                                    </p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={onCancel}
+                                        className="px-6 py-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest transition-all"
+                                    >
+                                        Exit
+                                    </button>
+                                    <button
+                                        onClick={handleAddField}
+                                        className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/20 rounded-full text-[10px] font-black text-white uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20"
+                                    >
+                                        Setup Manually
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
 
             {/* Footer */}
@@ -302,6 +440,25 @@ export function TemplateWizard({ filename, onComplete, onCancel }: TemplateWizar
                     )}
                 </button>
             </div>
+            <style jsx>{`
+                    .doc-preview-content {
+                        font-family: 'Inter', system-ui, sans-serif;
+                    }
+                    .doc-preview-content :global(h1) { font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: white; }
+                    .doc-preview-content :global(h2) { font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; color: #e2e8f0; }
+                    .doc-preview-content :global(p) { margin-bottom: 0.75rem; color: #94a3b8; line-height: 1.6; }
+                    .doc-preview-content :global(ul) { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+                    .doc-preview-content :global(ol) { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+                    .doc-preview-content :global(strong) { color: white; font-weight: 700; }
+                    
+                    @keyframes bounce-subtle {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-4px); }
+                    }
+                    .animate-bounce-subtle {
+                        animation: bounce-subtle 2s ease-in-out infinite;
+                    }
+                `}</style>
         </div>
     );
 }
